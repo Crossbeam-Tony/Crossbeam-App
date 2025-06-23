@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "770018831295",
+    "project_id": "crossbeam-bec8d",
+    "storage_bucket": "crossbeam-bec8d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:770018831295:android:72bf953e752c37a46fcf0a",
+        "android_client_info": {
+          "package_name": "com.example.temp_new_project_fixed"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCQG84uNj3GEVf7ryqRtC42vtC2oENECEA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

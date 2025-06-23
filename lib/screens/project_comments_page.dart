@@ -1,0 +1,20 @@
+import 'package:flutter/material.dart';
+import '../widgets/comments_widget.dart';
+
+class ProjectCommentsPage extends StatelessWidget {
+  final String projectId;
+
+  const ProjectCommentsPage({super.key, required this.projectId});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Project Comments'),
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        foregroundColor: Theme.of(context).colorScheme.onSurface,
+      ),
+      body: CommentsWidget(projectId: projectId),
+    );
+  }
+}
