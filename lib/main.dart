@@ -13,19 +13,34 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeSupabase();
   final prefs = await SharedPreferences.getInstance();
+
+  final authService = AuthService();
+
+  print('🔥🔥🔥 Starting app initialization... 🔥🔥🔥');
+
+  // Listen for auth state changes as recommended in troubleshooting steps
+  Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+    final event = data.event;
+    final session = data.session;
+    print('🔔 Auth state change: $event, session=$session');
+    if (session != null) {
+      print('🔔 User authenticated: ${session.user.email}');
+      print('🔔 Email confirmed at: ${session.user.emailConfirmedAt}');
+    }
+  });
+
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => AuthService()),
+        ChangeNotifierProvider(create: (_) => authService),
         ChangeNotifierProvider(create: (_) => ThemeService(prefs)),
-        ProxyProvider<AuthService, DataService>(
-          update: (_, authService, __) => DataService(authService.currentUser),
-        ),
+        ChangeNotifierProvider(
+            create: (_) => DataService(authService.currentUser)),
         ProxyProvider<AuthService, ProjectService>(
           update: (_, authService, __) => ProjectService(authService),
         ),
       ],
-      child: App(prefs: prefs),
+      child: App(prefs: prefs, authService: authService),
     ),
   );
 }

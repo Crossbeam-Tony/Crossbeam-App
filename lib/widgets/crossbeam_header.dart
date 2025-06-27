@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import 'rotating_gear.dart';
 import 'package:go_router/go_router.dart';
-import '../shared/avatar.dart';
 
 class CrossbeamHeader extends StatelessWidget {
   const CrossbeamHeader({super.key});
@@ -11,7 +10,6 @@ class CrossbeamHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = Provider.of<AuthService>(context).currentUser;
-    print('DEBUG: CrossbeamHeader user = $user');
     return Container(
       color: Theme.of(context).colorScheme.surface,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -33,12 +31,11 @@ class CrossbeamHeader extends StatelessWidget {
                   GoRouter.of(context).go('/profile');
                 },
                 child: CircleAvatar(
-                  backgroundImage: user != null && user.avatarUrl.isNotEmpty
+                  backgroundImage: user.avatarUrl.isNotEmpty
                       ? NetworkImage(user.avatarUrl)
                       : null,
-                  child: user == null || user.avatarUrl.isEmpty
-                      ? const Icon(Icons.person)
-                      : null,
+                  child:
+                      user.avatarUrl.isEmpty ? const Icon(Icons.person) : null,
                 ),
               ),
           ],

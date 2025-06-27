@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/marketplace_listing.dart';
 import '../../shared/avatar.dart';
-import 'marketplace_detail_page.dart';
-import '../../data/dummy_marketplace.dart';
 import '../../config/design_system.dart';
 import '../../components/sliding_card.dart';
 
@@ -15,7 +13,6 @@ class MarketplacePage extends StatefulWidget {
 
 class _MarketplacePageState extends State<MarketplacePage> {
   final TextEditingController _searchController = TextEditingController();
-  int? _openCardIndex;
   String _selectedCategory = 'All';
   String _selectedCondition = 'All';
   String _selectedCrew = 'All';
@@ -23,31 +20,15 @@ class _MarketplacePageState extends State<MarketplacePage> {
   bool _showMyListingsOnly = false;
   List<MarketplaceListing> _filteredListings = [];
   final Set<String> _favorites = {};
-  final Set<String> _interested = {};
 
   final List<String> _categories = [
     'All',
     'Electronics',
-    'Outdoor',
-    'Hunting',
-    'Auto Parts',
-    'Art Supplies',
-    'Camping',
-    'Tools',
-    'Firearms',
-    'Fitness',
-    'DIY',
-    'Parenting',
-    'Cooking',
-    'Music',
-    'Travel',
-    'Film',
-    'Sports',
+    'Clothing',
     'Books',
-    'Tech',
-    'Science',
-    'Pets',
-    'Crafts',
+    'Sports',
+    'Home & Garden',
+    'Other'
   ];
 
   final List<String> _conditions = [
@@ -62,12 +43,39 @@ class _MarketplacePageState extends State<MarketplacePage> {
   @override
   void initState() {
     super.initState();
-    _filteredListings = dummyListings;
+    // Initialize with empty list for now - will be replaced with live data
+    _filteredListings = <MarketplaceListing>[];
+    _filterListings();
+  }
+
+  void _filterListings() {
+    setState(() {
+      if (_selectedCategory == 'All') {
+        _filteredListings = <MarketplaceListing>[]; // Empty for now
+      } else {
+        _filteredListings = <MarketplaceListing>[].where((listing) {
+          return listing.category == _selectedCategory;
+        }).toList();
+      }
+    });
+  }
+
+  void _searchListings(String query) {
+    setState(() {
+      if (query.isEmpty) {
+        _filterListings();
+      } else {
+        _filteredListings = <MarketplaceListing>[].where((listing) {
+          return listing.title.toLowerCase().contains(query.toLowerCase()) ||
+              listing.description.toLowerCase().contains(query.toLowerCase());
+        }).toList();
+      }
+    });
   }
 
   void _applyFilters() {
     setState(() {
-      _filteredListings = dummyListings.where((listing) {
+      _filteredListings = <MarketplaceListing>[].where((listing) {
         // Category filter
         if (_selectedCategory != 'All' &&
             listing.category != _selectedCategory) {
@@ -122,26 +130,12 @@ class _MarketplacePageState extends State<MarketplacePage> {
     _applyFilters();
   }
 
-  void _toggleInterested(String listingId) {
-    setState(() {
-      if (_interested.contains(listingId)) {
-        _interested.remove(listingId);
-      } else {
-        _interested.add(listingId);
-      }
-    });
-  }
-
   void _onCardOpen(int index) {
-    setState(() {
-      _openCardIndex = index;
-    });
+    // _openCardIndex is removed as per the instructions
   }
 
   void _onCardClose() {
-    setState(() {
-      _openCardIndex = null;
-    });
+    // _openCardIndex is removed as per the instructions
   }
 
   @override
@@ -200,7 +194,7 @@ class _MarketplacePageState extends State<MarketplacePage> {
                 fillColor:
                     Theme.of(context).colorScheme.surfaceContainerHighest,
               ),
-              onChanged: (value) => _applyFilters(),
+              onChanged: _searchListings,
             ),
           ),
 
@@ -511,7 +505,7 @@ class _MarketplacePageState extends State<MarketplacePage> {
               color: Theme.of(context)
                   .colorScheme
                   .primaryContainer
-                  .withOpacity(0.1),
+                  .withValues(alpha: 0.1),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(12),
                 topRight: Radius.circular(12),
@@ -608,22 +602,5 @@ class _MarketplacePageState extends State<MarketplacePage> {
     if (diff.inHours > 0) return '${diff.inHours}h ago';
     if (diff.inMinutes > 0) return '${diff.inMinutes}m ago';
     return 'just now';
-  }
-
-  Color _getConditionColor(String condition) {
-    switch (condition) {
-      case 'New':
-        return Colors.green;
-      case 'Used - Like New':
-        return Colors.blue;
-      case 'Used - Excellent':
-        return Colors.orange;
-      case 'Used - Good':
-        return Colors.yellow[700]!;
-      case 'Used - Fair':
-        return Colors.red;
-      default:
-        return Colors.grey;
-    }
   }
 }

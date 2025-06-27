@@ -39,7 +39,7 @@ class DesignSystem {
     useMaterial3: true,
     colorScheme: ColorScheme.light(
       primary: mutedTangerine,
-      secondary: mutedTangerine.withOpacity(0.8),
+      secondary: mutedTangerine.withAlpha((0.8 * 255).toInt()),
       surface: pureWhite,
       error: const Color(0xFFE53935),
       onPrimary: pureWhite,
@@ -88,7 +88,7 @@ class DesignSystem {
     useMaterial3: true,
     colorScheme: ColorScheme.dark(
       primary: mutedTangerine,
-      secondary: mutedTangerine.withOpacity(0.8),
+      secondary: mutedTangerine.withAlpha((0.8 * 255).toInt()),
       surface: charcoal,
       error: const Color(0xFFE53935),
       onPrimary: pureWhite,

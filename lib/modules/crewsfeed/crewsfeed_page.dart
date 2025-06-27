@@ -1,25 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../models/project.dart';
-import '../../models/event.dart';
-import '../../models/marketplace_listing.dart';
 import '../../models/feed_item.dart';
 import '../../components/sliding_card.dart';
-import '../events/events_page.dart';
-import '../marketplace/marketplace_page.dart';
 import 'package:provider/provider.dart';
 import '../../services/data_service.dart';
-import '../projects/project_detail_page.dart';
-import '../events/event_detail_page.dart';
-import '../marketplace/marketplace_detail_page.dart';
 import 'package:go_router/go_router.dart';
-import '../../widgets/project_card.dart';
-import '../../widgets/marketplace_item_card.dart';
-import '../../widgets/feed_router.dart';
-import '../../screens/project_details_screen.dart';
-import '../../screens/event_details_screen.dart';
-import '../../screens/marketplace_detail_screen.dart';
-import '../../widgets/crossbeam_header.dart';
 import '../../widgets/feed_card_builders.dart';
 
 class CrewsfeedPage extends StatefulWidget {
@@ -39,7 +24,6 @@ class _CrewsfeedPageState extends State<CrewsfeedPage>
   int _currentPage = 0;
   final int _itemsPerPage = 10;
   final ScrollController _scrollController = ScrollController();
-  int? _openCardIndex;
 
   late AnimationController _shimmerController;
   late AnimationController _pulseController;
@@ -122,14 +106,6 @@ class _CrewsfeedPageState extends State<CrewsfeedPage>
           }
 
           _isLoadingMore = false;
-          print(
-              'DEBUG: _loadMoreItems - _allItems length: ${_allItems.length}');
-          print(
-              'DEBUG: _loadMoreItems - filteredItems length: ${filteredItems.length}');
-          print(
-              'DEBUG: _loadMoreItems - _displayedItems length: ${_displayedItems.length}');
-          print(
-              'DEBUG: _loadMoreItems - startIndex: $startIndex, endIndex: $endIndex');
         });
       }
     });
@@ -160,28 +136,6 @@ class _CrewsfeedPageState extends State<CrewsfeedPage>
     });
   }
 
-  void _onCardOpen(int index) {
-    setState(() {
-      _openCardIndex = index;
-    });
-  }
-
-  void _onCardClose() {
-    setState(() {
-      _openCardIndex = null;
-    });
-  }
-
-  void _handleCardStateChange(int index, bool isOpen) {
-    setState(() {
-      if (isOpen) {
-        _openCardIndex = index;
-      } else {
-        _openCardIndex = null;
-      }
-    });
-  }
-
   void _loadFeedItems() {
     final dataService = Provider.of<DataService>(context, listen: false);
 
@@ -204,9 +158,6 @@ class _CrewsfeedPageState extends State<CrewsfeedPage>
 
     // Shuffle to create a random feed
     _allItems.shuffle();
-    print('DEBUG: _loadFeedItems - _allItems length: ${_allItems.length}');
-    print(
-        'DEBUG: _loadFeedItems - projectItems: ${projectItems.length}, eventItems: ${eventItems.length}, listingItems: ${listingItems.length}');
   }
 
   @override
@@ -221,7 +172,7 @@ class _CrewsfeedPageState extends State<CrewsfeedPage>
               color: Theme.of(context).colorScheme.surface,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
@@ -235,13 +186,13 @@ class _CrewsfeedPageState extends State<CrewsfeedPage>
                     color: Theme.of(context)
                         .colorScheme
                         .surfaceContainerHighest
-                        .withOpacity(0.3),
+                        .withValues(alpha: 0.30),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: Theme.of(context)
                           .colorScheme
                           .outline
-                          .withOpacity(0.2),
+                          .withValues(alpha: 0.20),
                     ),
                   ),
                   child: TextField(
@@ -252,7 +203,7 @@ class _CrewsfeedPageState extends State<CrewsfeedPage>
                         color: Theme.of(context)
                             .colorScheme
                             .onSurface
-                            .withOpacity(0.5),
+                            .withValues(alpha: 0.50),
                       ),
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(
@@ -309,8 +260,6 @@ class _CrewsfeedPageState extends State<CrewsfeedPage>
                   }
 
                   final item = _displayedItems[index];
-                  print(
-                      'DEBUG: Building crewsfeed card for index=$index, type=${item.runtimeType}');
                   return Container(
                     margin: const EdgeInsets.only(bottom: 6.0),
                     height: 320,
@@ -322,12 +271,6 @@ class _CrewsfeedPageState extends State<CrewsfeedPage>
                       rightBottomLayer: (slideProgress) =>
                           _buildRightBottomLayer(item, index),
                       maxSwipeOffset: 160,
-                      onSlideLeft: () {
-                        print('Slid left');
-                        setState(() {
-                          _openCardIndex = index;
-                        });
-                      },
                     ),
                   );
                 },
@@ -346,7 +289,8 @@ class _CrewsfeedPageState extends State<CrewsfeedPage>
       onSelected: (selected) {
         _onFilterChanged(label);
       },
-      selectedColor: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+      selectedColor:
+          Theme.of(context).colorScheme.primary.withValues(alpha: 0.20),
       checkmarkColor: Theme.of(context).colorScheme.primary,
       labelStyle: TextStyle(
         color: isSelected
@@ -357,22 +301,13 @@ class _CrewsfeedPageState extends State<CrewsfeedPage>
       backgroundColor: Theme.of(context)
           .colorScheme
           .surfaceContainerHighest
-          .withOpacity(0.3),
+          .withValues(alpha: 0.30),
       side: BorderSide(
         color: isSelected
             ? Theme.of(context).colorScheme.primary
-            : Theme.of(context).colorScheme.outline.withOpacity(0.2),
+            : Theme.of(context).colorScheme.outline.withValues(alpha: 0.20),
       ),
     );
-  }
-
-  String _formatTimeAgo(DateTime date) {
-    final now = DateTime.now();
-    final diff = now.difference(date);
-    if (diff.inDays > 0) return '${diff.inDays}d ago';
-    if (diff.inHours > 0) return '${diff.inHours}h ago';
-    if (diff.inMinutes > 0) return '${diff.inMinutes}m ago';
-    return 'just now';
   }
 
   String _getItemTitle(dynamic item) {
@@ -409,7 +344,10 @@ class _CrewsfeedPageState extends State<CrewsfeedPage>
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Theme.of(context).colorScheme.primaryContainer.withOpacity(0.1),
+            Theme.of(context)
+                .colorScheme
+                .primaryContainer
+                .withValues(alpha: 0.10),
             Theme.of(context).colorScheme.surface,
           ],
         ),
@@ -453,7 +391,10 @@ class _CrewsfeedPageState extends State<CrewsfeedPage>
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Theme.of(context).colorScheme.secondaryContainer.withOpacity(0.1),
+              Theme.of(context)
+                  .colorScheme
+                  .secondaryContainer
+                  .withValues(alpha: 0.10),
               Theme.of(context).colorScheme.surface,
             ],
           ),
@@ -467,7 +408,7 @@ class _CrewsfeedPageState extends State<CrewsfeedPage>
                 color: Theme.of(context)
                     .colorScheme
                     .primaryContainer
-                    .withOpacity(0.2),
+                    .withValues(alpha: 0.20),
                 borderRadius: const BorderRadius.only(
                   topRight: Radius.circular(12),
                 ),

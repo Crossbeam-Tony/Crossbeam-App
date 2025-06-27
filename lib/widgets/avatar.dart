@@ -64,26 +64,19 @@ class AvatarWidget extends StatelessWidget {
 
     final avatar = GestureDetector(
       onTap: () {
-        print('AvatarWidget onTap called for userId: $userId');
-        print('External onTap provided: ${onTap != null}');
-        print('Disable internal navigation: $disableInternalNavigation');
-
         // If external onTap is provided, use it
         if (onTap != null) {
-          print('Calling external onTap callback');
           onTap!();
           return;
         }
 
         // If internal navigation is disabled, do nothing
         if (disableInternalNavigation) {
-          print('Internal navigation disabled, doing nothing');
           return;
         }
 
         // Otherwise, use internal navigation logic
         if (user != null && user.isCurrentUser) {
-          print('Showing profile picture dialog for current user');
           // Show profile picture dialog for current user
           showDialog(
             context: context,
@@ -109,7 +102,6 @@ class AvatarWidget extends StatelessWidget {
             ),
           );
         } else {
-          print('Navigating to user profile for userId: $userId');
           // Navigate to user profile for other users (or if user not found, still try to navigate)
           Navigator.push(
             context,
@@ -139,7 +131,7 @@ class AvatarWidget extends StatelessWidget {
     if (useListTile) {
       return ListTile(
         leading: avatar,
-        title: showName && user != null ? Text(user.name) : null,
+        title: showName && user != null ? Text(user.fullName) : null,
         subtitle:
             showUsername && user != null ? Text('@${user.username}') : null,
       );

@@ -100,7 +100,7 @@ class _EventFormState extends State<EventForm> {
         ),
         organizerId: currentUser.id,
         organizer: currentUser.name,
-        organizerAvatar: currentUser.avatar,
+        organizerAvatar: currentUser.avatarUrl,
         confirmedAttendeeIds: widget.event?.confirmedAttendeeIds ?? [],
         interestedAttendeeIds: widget.event?.interestedAttendeeIds ?? [],
         status: _status,

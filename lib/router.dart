@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'modules/crewsfeed/crewsfeed_page.dart';
 import 'modules/events/events_page.dart';
 import 'screens/my_profile_screen.dart';
@@ -9,36 +8,52 @@ import 'modules/projects/project_detail_page.dart';
 import 'modules/marketplace/marketplace_page.dart';
 import 'modules/auth/login_page.dart';
 import 'modules/auth/signup_page.dart';
-import 'widgets/crossbeam_header.dart';
+import 'modules/auth/verify_code_page.dart';
 import 'widgets/base_layout.dart';
 import 'screens/crews_screen.dart';
-import 'screens/crew_detail_page.dart';
-import 'screens/subcrew_threads_page.dart';
-import 'models/crew.dart';
-import 'models/project.dart';
 import 'screens/event_details_screen.dart';
 import 'modules/projects/project_form.dart';
 import 'screens/marketplace_detail_screen.dart';
-import 'screens/project_details_screen.dart';
-import 'screens/user_profile_screen.dart';
-import 'screens/thread_detail_page.dart';
-import 'models/listing.dart';
-import 'models/event.dart';
-import 'models/marketplace_item.dart';
-import 'models/user_profile.dart';
-import 'pages/comment_page.dart';
 import 'services/auth_service.dart';
+
+// Global navigator key for navigation from anywhere in the app
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 class AppRouter {
   static GoRouter createRouter(AuthService authService) {
     return GoRouter(
+      navigatorKey: navigatorKey,
+      refreshListenable: authService,
       redirect: (context, state) {
         final loggedIn = authService.isAuthenticated;
+        final user = authService.currentUser;
+        final isVerified = user != null;
         final isLoggingIn = state.uri.toString() == '/login' ||
             state.uri.toString() == '/signup';
+        final isVerifyCode = state.uri.path == '/verify-code';
 
-        if (!loggedIn && !isLoggingIn) return '/login';
-        if (loggedIn && isLoggingIn) return '/';
+        print('Router redirect check - Current route: ${state.uri.toString()}');
+        print(
+            'Logged in: $loggedIn, Is verified: $isVerified, Is verify code: $isVerifyCode');
+
+        // Allow verify-code route
+        if (isVerifyCode) {
+          print('No redirect needed for verify-code');
+          return null;
+        }
+
+        // Normal redirect logic
+        if (!loggedIn && !isLoggingIn) {
+          print('Redirecting to login (not logged in)');
+          return '/login';
+        }
+
+        if (loggedIn && isLoggingIn) {
+          print('Redirecting to home (already logged in)');
+          return '/';
+        }
+
+        print('No redirect needed');
         return null;
       },
       routes: [
@@ -49,6 +64,14 @@ class AppRouter {
         GoRoute(
           path: '/signup',
           builder: (context, state) => const SignUpPage(),
+        ),
+        GoRoute(
+          path: '/verify-code',
+          name: 'verify-code',
+          builder: (context, state) {
+            final email = state.uri.queryParameters['email'] ?? '';
+            return VerifyCodePage(email: email);
+          },
         ),
         GoRoute(
           path: '/',
@@ -79,8 +102,9 @@ class AppRouter {
         GoRoute(
           path: '/project/:id',
           builder: (context, state) {
-            final projectId = state.pathParameters['id']!;
-            return BaseLayout(child: ProjectDetailPage(projectId: projectId));
+            return BaseLayout(
+                child:
+                    ProjectDetailPage(projectId: state.pathParameters['id']!));
           },
         ),
         GoRoute(
@@ -101,7 +125,6 @@ class AppRouter {
         GoRoute(
           path: '/project/:id/edit',
           builder: (context, state) {
-            final projectId = state.pathParameters['id']!;
             return BaseLayout(
               child: Scaffold(
                 appBar: AppBar(title: const Text('Edit Project')),

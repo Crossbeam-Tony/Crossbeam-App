@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:image_picker/image_picker.dart';
-import 'dart:io';
 import '../../models/project.dart';
 import '../../services/auth_service.dart';
 import '../../services/project_service.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' hide Provider;
 
 class ProjectForm extends StatefulWidget {
   final Project? project;
-  final String? projectId; // Can be null for new projects
+  final String? projectId;
   final Function(Project) onSubmit;
 
   const ProjectForm(
@@ -23,21 +20,11 @@ class _ProjectFormState extends State<ProjectForm> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
-  final _imageUrlController = TextEditingController();
-  final _categoryController = TextEditingController();
-  final _locationController = TextEditingController();
-  final _buildTagsController = TextEditingController();
+  final _tagsController = TextEditingController();
   late final ProjectService _projectService;
-  List<String> _selectedMembers = [];
-  List<String> _buildTags = [];
-  Map<String, List<String>> _imagesByTag = {};
-  ProjectStatus _status = ProjectStatus.planning;
-  bool _isSubmitting = false;
-
-  // Image upload variables
-  File? _selectedImage;
-  bool _isUploadingImage = false;
-  final ImagePicker _picker = ImagePicker();
+  List<String> _tags = [];
+  String _status = 'planning';
+  List<String> _images = [];
 
   @override
   void initState() {
@@ -55,18 +42,13 @@ class _ProjectFormState extends State<ProjectForm> {
   void _loadProjectData(Project project) {
     _titleController.text = project.title;
     _descriptionController.text = project.description;
-    _imageUrlController.text = project.imageUrl ?? '';
-    _categoryController.text = project.category;
-    _locationController.text = project.location ?? '';
-    _buildTagsController.text = project.buildTags.join(', ');
-    _selectedMembers = project.members;
-    _buildTags = project.buildTags;
-    _imagesByTag = project.imagesByTag;
-    _status = project.status;
+    _tagsController.text = project.tags?.join(', ') ?? '';
+    _tags = project.tags ?? [];
+    _status = project.status ?? 'planning';
+    _images = project.images ?? [];
   }
 
   Future<void> _fetchAndLoadProjectData(String projectId) async {
-    // This assumes a method in ProjectService to get a project by ID
     final project = await _projectService.getProjectById(projectId);
     if (project != null) {
       setState(() {
@@ -79,129 +61,64 @@ class _ProjectFormState extends State<ProjectForm> {
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
-    _imageUrlController.dispose();
-    _categoryController.dispose();
-    _locationController.dispose();
-    _buildTagsController.dispose();
+    _tagsController.dispose();
     super.dispose();
   }
 
-  Future<String?> _uploadImage(File imageFile) async {
-    setState(() => _isUploadingImage = true);
-    try {
-      final fileName =
-          'project_${DateTime.now().millisecondsSinceEpoch}_${imageFile.path.split('/').last}';
-      final storage = Supabase.instance.client.storage.from('project-images');
-      final res = await storage.upload(fileName, imageFile);
-      if (res.isNotEmpty) {
-        final publicUrl = storage.getPublicUrl(fileName);
-        return publicUrl;
-      }
-    } catch (e) {
-      print('Image upload error: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text('Image upload failed: $e'),
-            backgroundColor: Colors.red),
-      );
-    } finally {
-      setState(() => _isUploadingImage = false);
-    }
-    return null;
-  }
-
-  Future<void> _pickImage() async {
-    final picked =
-        await _picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
-    if (picked != null) {
-      setState(() {
-        _selectedImage = File(picked.path);
-      });
+  void _parseTags() {
+    final tagText = _tagsController.text.trim();
+    if (tagText.isNotEmpty) {
+      _tags = tagText
+          .split(',')
+          .map((tag) => tag.trim())
+          .where((tag) => tag.isNotEmpty)
+          .toList();
+    } else {
+      _tags = [];
     }
   }
 
   Future<void> _submitForm() async {
-    if (_formKey.currentState!.validate()) {
+    if (!_formKey.currentState!.validate()) return;
+
+    try {
+      _parseTags();
       final authService = Provider.of<AuthService>(context, listen: false);
       final currentUser = authService.currentUser;
+      if (currentUser == null) throw Exception('User not authenticated');
 
-      if (currentUser == null) {
+      final projectData = Project(
+        id: widget.project?.id ?? '',
+        userId: currentUser.id,
+        title: _titleController.text,
+        description: _descriptionController.text,
+        status: _status,
+        tags: _tags,
+        images: _images,
+        createdAt: widget.project?.createdAt ?? DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+
+      if (widget.project != null) {
+        await _projectService.updateProject(projectData);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please sign in to create a project'),
-            backgroundColor: Colors.red,
-          ),
+          const SnackBar(content: Text('Project updated successfully!')),
         );
-        return;
+      } else {
+        await _projectService.createProject(projectData);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Project created successfully!')),
+        );
       }
 
-      setState(() => _isSubmitting = true);
-
-      try {
-        String imageUrl = _imageUrlController.text;
-        if (_selectedImage != null) {
-          final uploadedUrl = await _uploadImage(_selectedImage!);
-          if (uploadedUrl != null) {
-            imageUrl = uploadedUrl;
-          }
-        }
-
-        final buildTags = _buildTagsController.text
-            .split(',')
-            .map((tag) => tag.trim())
-            .where((tag) => tag.isNotEmpty)
-            .toList();
-
-        final projectData = Project(
-          id: widget.project?.id ?? '', // Use existing ID if editing
-          title: _titleController.text,
-          description: _descriptionController.text,
-          category: _categoryController.text.isNotEmpty
-              ? _categoryController.text
-              : 'General',
-          location: _locationController.text,
-          imageUrl: imageUrl,
-          ownerId: widget.project?.ownerId ?? currentUser.id,
-          owner: widget.project?.owner ?? currentUser.name,
-          ownerAvatar: widget.project?.ownerAvatar ?? currentUser.avatarUrl,
-          members: _selectedMembers,
-          status: _status,
-          progress: widget.project?.progress ?? 0.0,
-          dueDate: widget.project?.dueDate ??
-              DateTime.now().add(const Duration(days: 30)),
-          createdAt: widget.project?.createdAt ?? DateTime.now(),
-          updatedAt: DateTime.now(),
-          buildTags: buildTags,
-          imagesByTag: _imagesByTag,
-          comments: widget.project?.comments ?? [],
-          image: widget.project?.image ?? '',
-          userEmail: widget.project?.userEmail ?? currentUser.email,
-        );
-
-        if (widget.project != null) {
-          await _projectService.updateProject(projectData);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Project updated successfully!')),
-          );
-        } else {
-          final newProject = await _projectService.createProject(projectData);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Project created successfully!')),
-          );
-        }
-
-        widget.onSubmit(projectData);
-      } catch (e) {
-        print('Error creating project: $e');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error creating project: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      } finally {
-        setState(() => _isSubmitting = false);
-      }
+      widget.onSubmit(projectData);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -210,8 +127,15 @@ class _ProjectFormState extends State<ProjectForm> {
     return Form(
       key: _formKey,
       child: Column(
-        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          Text(
+            widget.project != null ? 'Edit Project' : 'Create New Project',
+            style: Theme.of(context).textTheme.headlineSmall,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 20),
+
           TextFormField(
             controller: _titleController,
             decoration: const InputDecoration(
@@ -219,13 +143,14 @@ class _ProjectFormState extends State<ProjectForm> {
               border: OutlineInputBorder(),
             ),
             validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter a title';
+              if (value == null || value.trim().isEmpty) {
+                return 'Please enter a project title';
               }
               return null;
             },
           ),
           const SizedBox(height: 16),
+
           TextFormField(
             controller: _descriptionController,
             decoration: const InputDecoration(
@@ -234,111 +159,100 @@ class _ProjectFormState extends State<ProjectForm> {
             ),
             maxLines: 3,
             validator: (value) {
-              if (value == null || value.isEmpty) {
+              if (value == null || value.trim().isEmpty) {
                 return 'Please enter a description';
               }
               return null;
             },
           ),
           const SizedBox(height: 16),
-          TextFormField(
-            controller: _categoryController,
+
+          DropdownButtonFormField<String>(
+            value: _status,
             decoration: const InputDecoration(
-              labelText: 'Category (optional)',
+              labelText: 'Status',
               border: OutlineInputBorder(),
             ),
-          ),
-          const SizedBox(height: 16),
-          TextFormField(
-            controller: _locationController,
-            decoration: const InputDecoration(
-              labelText: 'Location (optional)',
-              border: OutlineInputBorder(),
-            ),
-          ),
-          const SizedBox(height: 16),
-          TextFormField(
-            controller: _buildTagsController,
-            decoration: const InputDecoration(
-              labelText: 'Tech Stack (comma-separated)',
-              border: OutlineInputBorder(),
-              hintText: 'e.g., Flutter, Dart, Firebase',
-            ),
-          ),
-          const SizedBox(height: 16),
-          TextFormField(
-            controller: _imageUrlController,
-            decoration: const InputDecoration(
-              labelText: 'Image URL (optional)',
-              border: OutlineInputBorder(),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              _selectedImage != null
-                  ? ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
-                      child: Image.file(_selectedImage!,
-                          width: 80, height: 80, fit: BoxFit.cover),
-                    )
-                  : _imageUrlController.text.isNotEmpty
-                      ? ClipRRect(
-                          borderRadius: BorderRadius.circular(4),
-                          child: Image.network(_imageUrlController.text,
-                              width: 80, height: 80, fit: BoxFit.cover),
-                        )
-                      : Container(
-                          width: 80,
-                          height: 80,
-                          decoration: BoxDecoration(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .surfaceContainerHighest
-                                .withOpacity(0.3),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Icon(Icons.work_outline,
-                              size: 40,
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurfaceVariant
-                                  .withOpacity(0.3)),
-                        ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: _isUploadingImage ? null : _pickImage,
-                  icon: const Icon(Icons.image),
-                  label:
-                      Text(_isUploadingImage ? 'Uploading...' : 'Pick Image'),
-                ),
-              ),
+            items: const [
+              DropdownMenuItem(value: 'planning', child: Text('Planning')),
+              DropdownMenuItem(
+                  value: 'in-progress', child: Text('In Progress')),
+              DropdownMenuItem(value: 'review', child: Text('Review')),
+              DropdownMenuItem(value: 'completed', child: Text('Completed')),
             ],
+            onChanged: (value) {
+              setState(() {
+                _status = value!;
+              });
+            },
           ),
-          const SizedBox(height: 24),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: _isSubmitting ? null : _submitForm,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-              ),
-              child: _isSubmitting
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : Text(
-                      widget.project == null
-                          ? 'Create Project'
-                          : 'Update Project',
-                    ),
+          const SizedBox(height: 16),
+
+          TextFormField(
+            controller: _tagsController,
+            decoration: const InputDecoration(
+              labelText: 'Tags (comma-separated)',
+              border: OutlineInputBorder(),
+              hintText: 'e.g., photography, workshop, community',
             ),
+          ),
+          const SizedBox(height: 16),
+
+          // Images section
+          if (_images.isNotEmpty) ...[
+            Text('Images (${_images.length})',
+                style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 100,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: _images.length,
+                itemBuilder: (context, index) {
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: Stack(
+                      children: [
+                        Image.network(
+                          _images[index],
+                          width: 100,
+                          height: 100,
+                          fit: BoxFit.cover,
+                        ),
+                        Positioned(
+                          top: 4,
+                          right: 4,
+                          child: IconButton(
+                            icon: const Icon(Icons.close, color: Colors.white),
+                            onPressed: () => _removeImage(index),
+                            style: IconButton.styleFrom(
+                              backgroundColor: Colors.red,
+                              padding: const EdgeInsets.all(4),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+
+          ElevatedButton(
+            onPressed: _submitForm,
+            child: Text(
+                widget.project != null ? 'Update Project' : 'Create Project'),
           ),
         ],
       ),
     );
+  }
+
+  void _removeImage(int index) {
+    setState(() {
+      _images.removeAt(index);
+    });
   }
 }

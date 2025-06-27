@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/data_service.dart';
 import '../models/project.dart';
-import '../models/user_profile.dart';
-import '../shared/avatar.dart';
 import '../screens/project_comments_page.dart';
 
 class ProjectDetailsScreen extends StatefulWidget {
@@ -21,7 +19,6 @@ class ProjectDetailsScreen extends StatefulWidget {
 class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
   final TextEditingController _commentController = TextEditingController();
   final List<Map<String, dynamic>> _comments = [];
-  final bool _isLoading = false;
 
   @override
   void initState() {
@@ -140,7 +137,9 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Image.network(
-                        project.image,
+                        project.images?.isNotEmpty == true
+                            ? project.images!.first
+                            : 'https://picsum.photos/800/600',
                         width: double.infinity,
                         height: 200,
                         fit: BoxFit.cover,
@@ -148,7 +147,7 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                           return Container(
                             height: 200,
                             width: double.infinity,
-                            color: Colors.grey[200],
+                            color: Colors.grey.withValues(alpha: 0.2),
                             child: const Center(
                               child: Icon(
                                 Icons.image_not_supported_outlined,
@@ -170,9 +169,12 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                             ),
                             const SizedBox(height: 8),
                             Chip(
-                              label: Text(
-                                  project.status.toString().split('.').last),
-                              backgroundColor: _getStatusColor(project.status),
+                              label: Text(project.statusEnum
+                                  .toString()
+                                  .split('.')
+                                  .last),
+                              backgroundColor:
+                                  _getStatusColor(project.statusEnum),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(4.0),
                               ),
@@ -188,49 +190,36 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                               style: Theme.of(context).textTheme.titleLarge,
                             ),
                             const SizedBox(height: 8),
-                            _buildDetailRow(
-                                context, 'Category', project.category),
-                            _buildDetailRow(
-                                context, 'Progress', '${project.progress}%'),
-                            _buildDetailRow(context, 'Due Date',
-                                project.dueDate.toString()),
+                            _buildDetailRow(context, 'Tags',
+                                project.tags?.join(', ') ?? 'None'),
+                            _buildDetailRow(context, 'Progress', '50%'),
+                            _buildDetailRow(context, 'Created',
+                                'Created ${_formatDate(project.createdAt)}'),
                             const SizedBox(height: 24),
                             Text(
-                              'Team Members',
+                              'Project Images',
                               style: Theme.of(context).textTheme.titleLarge,
                             ),
                             const SizedBox(height: 8),
-                            Wrap(
-                              spacing: 4.0,
-                              runSpacing: 4.0,
-                              children: project.members.map((memberId) {
-                                return FutureBuilder<UserProfile?>(
-                                  future: dataService.getUserProfile(memberId),
-                                  builder: (context, snapshot) {
-                                    if (!snapshot.hasData ||
-                                        snapshot.data == null) {
-                                      return const SizedBox.shrink();
-                                    }
-                                    final member = snapshot.data!;
-                                    return Chip(
-                                      avatar: ClipOval(
-                                        child: Image.network(
-                                          member.avatarUrl,
-                                          width: 40,
-                                          height: 40,
-                                          fit: BoxFit.cover,
-                                        ),
-                                      ),
-                                      label: Text(member.name),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(4.0),
-                                      ),
-                                    );
-                                  },
-                                );
-                              }).toList(),
-                            ),
+                            if (project.images != null &&
+                                project.images!.isNotEmpty)
+                              Wrap(
+                                spacing: 4.0,
+                                runSpacing: 4.0,
+                                children: project.images!.map((imageUrl) {
+                                  return ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Image.network(
+                                      imageUrl,
+                                      width: 80,
+                                      height: 80,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  );
+                                }).toList(),
+                              )
+                            else
+                              const Text('No images available'),
                             const SizedBox(height: 24),
                             // Comments section
                             Row(
@@ -293,7 +282,7 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                   color: Theme.of(context).colorScheme.surface,
                   border: Border(
                     top: BorderSide(
-                      color: Colors.grey.withOpacity(0.2),
+                      color: Colors.grey.withValues(alpha: 0.2),
                       width: 1,
                     ),
                   ),
@@ -303,7 +292,7 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                     Expanded(
                       child: Container(
                         decoration: BoxDecoration(
-                          color: Colors.grey.withOpacity(0.1),
+                          color: Colors.grey.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: TextField(
@@ -382,7 +371,7 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                     Text(
                       _formatTime(comment['time']),
                       style: TextStyle(
-                        color: Colors.grey[600],
+                        color: Colors.grey.withValues(alpha: 0.6),
                         fontSize: 10,
                       ),
                     ),
@@ -437,5 +426,10 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
       case ProjectStatus.completed:
         return Colors.green.shade100;
     }
+  }
+
+  String _formatDate(DateTime date) {
+    // Implement date formatting logic based on your requirements
+    return date.toString();
   }
 }

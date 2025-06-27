@@ -1,7 +1,5 @@
-import 'remap_user_ids.dart';
+import 'remap_user_ids.dart' as remap;
 
 void main() async {
-  print('Starting user ID remapping process...');
-  await UserIdRemapper.processAllFiles();
-  print('User ID remapping completed!');
+  remap.main();
 }

@@ -10,11 +10,12 @@ class ProjectCommentsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Project Comments'),
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        foregroundColor: Theme.of(context).colorScheme.onSurface,
+        title: const Text('Comments'),
       ),
-      body: CommentsWidget(projectId: projectId),
+      body: CommentsWidget(
+        entityType: 'project',
+        entityId: projectId,
+      ),
     );
   }
 }

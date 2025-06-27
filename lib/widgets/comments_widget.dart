@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../services/project_service.dart';
-import '../models/project.dart';
+import '../models/comment.dart';
+import '../services/comment_service.dart';
 import '../services/auth_service.dart';
 
 class CommentsWidget extends StatefulWidget {
-  final String projectId;
-  final Project? project; // Pass the project directly if available
+  final String entityType;
+  final String entityId;
 
   const CommentsWidget({
     super.key,
-    required this.projectId,
-    this.project,
+    required this.entityType,
+    required this.entityId,
   });
 
   @override
@@ -19,275 +19,186 @@ class CommentsWidget extends StatefulWidget {
 }
 
 class _CommentsWidgetState extends State<CommentsWidget> {
-  final TextEditingController _controller = TextEditingController();
-  late final ProjectService _projectService;
-  List<Map<String, dynamic>> _comments = [];
-  bool _isLoading = true;
+  late CommentService _commentService;
+  final TextEditingController _commentController = TextEditingController();
+  bool _isSubmitting = false;
 
   @override
   void initState() {
     super.initState();
-    // Initialize ProjectService with AuthService from Provider
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final authService = Provider.of<AuthService>(context, listen: false);
-      _projectService = ProjectService(authService);
-      _loadComments();
-    });
+    final authService = Provider.of<AuthService>(context, listen: false);
+    _commentService = CommentService(authService);
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _commentController.dispose();
     super.dispose();
   }
 
-  Future<void> _loadComments() async {
+  Future<void> _addComment() async {
+    if (_commentController.text.trim().isEmpty) return;
+
     setState(() {
-      _isLoading = true;
+      _isSubmitting = true;
     });
 
     try {
-      // If we have a project passed in, use its comments
-      if (widget.project != null) {
-        setState(() {
-          _comments = widget.project!.comments;
-          _isLoading = false;
-        });
-      } else {
-        // Otherwise, fetch the project to get its comments
-        final projects = await _projectService.fetchProjects();
-        final project = projects.firstWhere(
-          (p) => p.id == widget.projectId,
-          orElse: () => throw Exception('Project not found'),
-        );
+      final comment = Comment(
+        id: '',
+        userId: '',
+        entityType: widget.entityType,
+        entityId: widget.entityId,
+        content: _commentController.text.trim(),
+        createdAt: DateTime.now(),
+      );
 
-        setState(() {
-          _comments = project.comments;
-          _isLoading = false;
-        });
+      await _commentService.createComment(comment);
+      _commentController.clear();
+
+      // Refresh the widget
+      if (mounted) {
+        setState(() {});
       }
-    } catch (e) {
-      print('Error loading comments: $e');
-      setState(() {
-        _isLoading = false;
-      });
-
+    } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to load comments: $e'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('Error adding comment: $error')),
         );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
       }
     }
   }
 
-  Future<void> _submitComment() async {
-    final text = _controller.text.trim();
-    if (text.isEmpty) return;
-
-    setState(() {
-      _isLoading = true;
-    });
-
+  Future<void> _deleteComment(String commentId) async {
     try {
-      await _projectService.addComment(widget.projectId, text);
-
-      _controller.clear();
-      await _loadComments(); // Refresh comments
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Comment added successfully'),
-          backgroundColor: Colors.green,
-        ),
-      );
-    } catch (e) {
-      print('Error submitting comment: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error adding comment: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      await _commentService.deleteComment(commentId);
+      // Refresh the widget
+      if (mounted) {
+        setState(() {});
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error deleting comment: $error')),
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading && _comments.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Comments list
-        if (_comments.isNotEmpty)
-          Expanded(
-            child: ListView.builder(
-              itemCount: _comments.length,
-              itemBuilder: (context, index) {
-                final comment = _comments[index];
-                return _buildCommentTile(comment);
-              },
-            ),
-          )
-        else
-          const Expanded(
-            child: Center(
-              child: Text(
-                'No comments yet. Be the first to comment!',
-                style: TextStyle(
-                  color: Colors.grey,
-                  fontSize: 16,
-                ),
-              ),
-            ),
-          ),
-
-        // Comment input
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            border: Border(
-              top: BorderSide(
-                color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
-              ),
-            ),
-          ),
+        // Add comment section
+        Padding(
+          padding: const EdgeInsets.all(16.0),
           child: Row(
             children: [
               Expanded(
                 child: TextField(
-                  controller: _controller,
+                  controller: _commentController,
                   decoration: const InputDecoration(
                     hintText: 'Add a comment...',
                     border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
                   ),
-                  maxLines: null,
-                  textInputAction: TextInputAction.send,
-                  onSubmitted: (_) => _submitComment(),
+                  maxLines: 3,
                 ),
               ),
               const SizedBox(width: 8),
-              IconButton(
-                icon: _isLoading
+              ElevatedButton(
+                onPressed: _isSubmitting ? null : _addComment,
+                child: _isSubmitting
                     ? const SizedBox(
                         width: 20,
                         height: 20,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.send),
-                onPressed: _isLoading ? null : _submitComment,
               ),
             ],
+          ),
+        ),
+
+        // Comments list
+        Expanded(
+          child: FutureBuilder<List<Comment>>(
+            future: _commentService.fetchCommentsForProject(widget.entityId),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              if (snapshot.hasError) {
+                return Center(
+                  child: Text('Error loading comments: ${snapshot.error}'),
+                );
+              }
+
+              final comments = snapshot.data ?? [];
+
+              if (comments.isEmpty) {
+                return const Center(
+                  child: Text('No comments yet'),
+                );
+              }
+
+              return ListView.builder(
+                itemCount: comments.length,
+                itemBuilder: (context, index) {
+                  final comment = comments[index];
+                  return _buildCommentTile(comment);
+                },
+              );
+            },
           ),
         ),
       ],
     );
   }
 
-  Widget _buildCommentTile(Map<String, dynamic> comment) {
-    final commentText = comment['comment'] as String? ?? '';
-    final createdAt = comment['created_at'] as String?;
-    final userId = comment['user_id'] as String?;
-
-    DateTime? commentTime;
-    if (createdAt != null) {
-      try {
-        commentTime = DateTime.parse(createdAt);
-      } catch (e) {
-        commentTime = DateTime.now();
-      }
-    }
-
-    return Container(
+  Widget _buildCommentTile(Comment comment) {
+    return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Theme.of(context)
-            .colorScheme
-            .surfaceContainerHighest
-            .withOpacity(0.3),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+      child: ListTile(
+        title: Text(comment.content),
+        subtitle: Text(
+          '${comment.userId} • ${_formatTimeAgo(comment.createdAt)}',
+          style: TextStyle(color: Colors.grey[600]),
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 16,
-                backgroundColor:
-                    Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                child: Text(
-                  userId?.substring(0, 2).toUpperCase() ?? 'U',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'User ${userId?.substring(0, 8) ?? 'Unknown'}',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                    ),
-                    if (commentTime != null)
-                      Text(
-                        _formatTimeAgo(commentTime),
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurface
-                                  .withOpacity(0.6),
-                            ),
-                      ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            commentText,
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
-        ],
+        trailing: PopupMenuButton(
+          itemBuilder: (context) => [
+            const PopupMenuItem(
+              value: 'delete',
+              child: Text('Delete'),
+            ),
+          ],
+          onSelected: (value) {
+            if (value == 'delete') {
+              _deleteComment(comment.id);
+            }
+          },
+        ),
       ),
     );
   }
 
-  String _formatTimeAgo(DateTime time) {
+  String _formatTimeAgo(DateTime date) {
     final now = DateTime.now();
-    final difference = now.difference(time);
+    final diff = now.difference(date);
 
-    if (difference.inDays > 0) {
-      return '${difference.inDays}d ago';
-    } else if (difference.inHours > 0) {
-      return '${difference.inHours}h ago';
-    } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes}m ago';
+    if (diff.inDays > 0) {
+      return '${diff.inDays}d ago';
+    } else if (diff.inHours > 0) {
+      return '${diff.inHours}h ago';
+    } else if (diff.inMinutes > 0) {
+      return '${diff.inMinutes}m ago';
     } else {
       return 'Just now';
     }

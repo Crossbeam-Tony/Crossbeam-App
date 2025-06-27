@@ -1,0 +1,177 @@
+[
+  {
+    "id": "6892cfa7-1d40-4c94-a9be-348f3aade54e",
+    "email": "brandon.foster@email.com",
+    "password": "Password123!",
+    "bio": "Just a guy who loves working on cars.",
+    "location": "Riverview"
+  },
+  {
+    "id": "f2901e7d-072c-43f5-8806-d121c1b080b2",
+    "email": "mike.smith@email.com",
+    "password": "Password123!",
+    "bio": "From garage to track \u2013 that\u2019s the path.",
+    "location": "Seffner"
+  },
+  {
+    "id": "7117f8bc-cef8-4590-920a-726fbc53d259",
+    "email": "josh.johnson@email.com",
+    "password": "Password123!",
+    "bio": "Built not bought, every time.",
+    "location": "Seffner"
+  },
+  {
+    "id": "53bcba69-10bb-4ace-aebd-09947d021141",
+    "email": "kevin.anderson@email.com",
+    "password": "Password123!",
+    "bio": "Always down for a project or a weekend ride.",
+    "location": "Lithia"
+  },
+  {
+    "id": "3c008b33-4e2e-4a0f-8c2d-4888894f73f6",
+    "email": "tony.brown@email.com",
+    "password": "Password123!",
+    "bio": "Let\u2019s get something running.",
+    "location": "Lithia"
+  },
+  {
+    "id": "f8019721-2907-402b-8c08-00e0452ae568",
+    "email": "chris.davis@email.com",
+    "password": "Password123!",
+    "bio": "Custom wheels, custom life.",
+    "location": "Tampa"
+  },
+  {
+    "id": "d85a7dbb-fe99-445b-85aa-a3d8ab55ae32",
+    "email": "kyle.evans@email.com",
+    "password": "Password123!",
+    "bio": "Built not bought, every time.",
+    "location": "Riverview"
+  },
+  {
+    "id": "b0bc8718-1f7f-4d86-bfe1-ffd995ae52d8",
+    "email": "derek.franklin@email.com",
+    "password": "Password123!",
+    "bio": "Custom wheels, custom life.",
+    "location": "Dover"
+  },
+  {
+    "id": "5c6f6606-99d2-4332-a854-f7e6b6a8e2b0",
+    "email": "shawn.garcia@email.com",
+    "password": "Password123!",
+    "bio": "Just a guy who loves working on cars.",
+    "location": "Bloomingdale"
+  },
+  {
+    "id": "a0a61780-024e-4f72-97c8-2f2a498511ce",
+    "email": "zach.hill@email.com",
+    "password": "Password123!",
+    "bio": "Built not bought, every time.",
+    "location": "Valrico"
+  },
+  {
+    "id": "bf8b6e95-3666-41d7-9111-517426851991",
+    "email": "aaron.irwin@email.com",
+    "password": "Password123!",
+    "bio": "Tampa born, garage raised.",
+    "location": "Lithia"
+  },
+  {
+    "id": "8e6cd908-d874-4773-a8e4-331cfab79496",
+    "email": "brian.james@email.com",
+    "password": "Password123!",
+    "bio": "Just a guy who loves working on cars.",
+    "location": "Brandon"
+  },
+  {
+    "id": "231696af-c4c5-42ad-b25f-210f99f7f141",
+    "email": "cody.klein@email.com",
+    "password": "Password123!",
+    "bio": "Built not bought, every time.",
+    "location": "Brandon"
+  },
+  {
+    "id": "a864af08-3e37-449e-baa1-817c402e56f6",
+    "email": "dan.lewis@email.com",
+    "password": "Password123!",
+    "bio": "Built not bought, every time.",
+    "location": "Tampa"
+  },
+  {
+    "id": "d9d3c560-0986-43b9-b6a7-d939bc73763d",
+    "email": "evan.moore@email.com",
+    "password": "Password123!",
+    "bio": "Mechanic by trade, builder by passion.",
+    "location": "Bloomingdale"
+  },
+  {
+    "id": "3d0fcd78-acb8-4094-808b-ef68486c39ed",
+    "email": "frank.nelson@email.com",
+    "password": "Password123!",
+    "bio": "Tampa born, garage raised.",
+    "location": "Dover"
+  },
+  {
+    "id": "7c27764c-764f-4ef4-b96e-4843dfb2f3e2",
+    "email": "grant.owens@email.com",
+    "password": "Password123!",
+    "bio": "Custom wheels, custom life.",
+    "location": "Tampa"
+  },
+  {
+    "id": "34dc80e8-7169-437c-99fc-0321d7a1a1da",
+    "email": "hank.perez@email.com",
+    "password": "Password123!",
+    "bio": "Always down for a project or a weekend ride.",
+    "location": "Tampa"
+  },
+  {
+    "id": "72190d66-7a6d-4dee-82b7-27ab70a63811",
+    "email": "ian.quinn@email.com",
+    "password": "Password123!",
+    "bio": "Let\u2019s get something running.",
+    "location": "Lithia"
+  },
+  {
+    "id": "1d8c49fe-fabc-4daa-a1c8-ab0fb76486a4",
+    "email": "jake.reed@email.com",
+    "password": "Password123!",
+    "bio": "Just a guy who loves working on cars.",
+    "location": "Dover"
+  },
+  {
+    "id": "c309b839-58eb-43b1-bea6-eace8e36f52e",
+    "email": "leo.scott@email.com",
+    "password": "Password123!",
+    "bio": "Built not bought, every time.",
+    "location": "Dover"
+  },
+  {
+    "id": "2f3086ad-a67d-43cf-9b70-16348e928017",
+    "email": "matt.turner@email.com",
+    "password": "Password123!",
+    "bio": "Built not bought, every time.",
+    "location": "Plant City"
+  },
+  {
+    "id": "75c2b45d-f9c4-4150-a8a4-f600e4a45508",
+    "email": "nate.upton@email.com",
+    "password": "Password123!",
+    "bio": "Custom wheels, custom life.",
+    "location": "Tampa"
+  },
+  {
+    "id": "d67554e0-a0e6-4685-973f-f49217f38147",
+    "email": "owen.vargas@email.com",
+    "password": "Password123!",
+    "bio": "Just a guy who loves working on cars.",
+    "location": "Riverview"
+  },
+  {
+    "id": "50406b9b-63e6-4e2d-9c3a-f8c34a1df80e",
+    "email": "paul.walker@email.com",
+    "password": "Password123!",
+    "bio": "From garage to track \u2013 that\u2019s the path.",
+    "location": "Bloomingdale"
+  }
+]

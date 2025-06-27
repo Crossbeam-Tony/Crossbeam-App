@@ -30,14 +30,12 @@ String remapIds(String content) {
 void processFile(String path) {
   final file = File(path);
   if (!file.existsSync()) {
-    print('File not found: $path');
     return;
   }
   String content = file.readAsStringSync();
   content = remapIndices(content);
   content = remapIds(content);
   file.writeAsStringSync(content);
-  print('Remapped user references in $path');
 }
 
 void main() {

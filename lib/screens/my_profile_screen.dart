@@ -1,17 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart' as provider;
-import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/auth_service.dart';
-import '../services/data_service.dart';
-import '../models/user_profile.dart';
-import '../models/project.dart';
 import '../shared/avatar.dart';
 import '../config/design_system.dart';
 import 'dart:math';
-import '../widgets/project_card.dart';
-import '../screens/user_profile_screen.dart';
-import '../utils/nav_helpers.dart';
 
 class MyProfileScreen extends StatelessWidget {
   const MyProfileScreen({super.key});
@@ -96,7 +89,7 @@ class MyProfileScreen extends StatelessWidget {
                       end: Alignment.bottomCenter,
                       colors: [
                         Colors.transparent,
-                        Colors.black.withOpacity(0.7),
+                        Colors.black.withValues(alpha: 0.7),
                       ],
                     ),
                   ),
@@ -139,64 +132,39 @@ class MyProfileScreen extends StatelessWidget {
                 children: [
                   // Name and username moved up
                   Text(
-                    user.realname,
+                    user.fullName,
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
                   ),
-                  Text(
-                    '@${user.username}',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey[600],
-                        ),
-                  ),
+                  if (user.bio.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      user.bio,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Colors.grey[600],
+                          ),
+                    ),
+                  ],
                   Row(
                     children: [
                       Icon(Icons.location_on,
-                          size: 16, color: Colors.grey[600]),
-                      const SizedBox(width: 4),
+                          color: Theme.of(context).colorScheme.primary),
+                      const SizedBox(width: 8),
                       Text(
-                        user.location,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.grey[600],
-                            ),
+                        user.fullName,
+                        style: Theme.of(context).textTheme.bodyMedium,
                       ),
                     ],
                   ),
                   const SizedBox(height: 16),
-                  Text(
-                    user.bio,
-                    style: Theme.of(context).textTheme.bodyLarge,
-                  ),
                 ],
               ),
             ),
           ),
 
-          // Stats
-          SliverToBoxAdapter(
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              decoration: BoxDecoration(
-                border: Border(
-                  top: BorderSide(color: Theme.of(context).dividerColor),
-                  bottom: BorderSide(color: Theme.of(context).dividerColor),
-                ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _buildStat(context, 'Projects', user.stats['projects'] ?? 0),
-                  _buildStat(
-                      context, 'Followers', user.stats['followers'] ?? 0),
-                  _buildStat(
-                      context, 'Following', user.stats['following'] ?? 0),
-                ],
-              ),
-            ),
-          ),
-
-          // Skills
+          // Skills - Commented out until skills field is added to schema
+          /*
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(4.0),
@@ -221,7 +189,7 @@ class MyProfileScreen extends StatelessWidget {
                         backgroundColor: (isDark
                                 ? DesignSystem.mutedTangerine
                                 : DesignSystem.mutedTangerine)
-                            .withOpacity(0.1),
+                            .withValues(alpha: 0.1),
                         labelStyle: TextStyle(
                           color: isDark
                               ? DesignSystem.mutedTangerine
@@ -238,6 +206,7 @@ class MyProfileScreen extends StatelessWidget {
               ),
             ),
           ),
+          */
 
           // Collaboration Activity Section
           SliverToBoxAdapter(
@@ -310,61 +279,70 @@ class MyProfileScreen extends StatelessWidget {
           ),
 
           // Projects Section
-          SliverToBoxAdapter(
+          const SliverToBoxAdapter(
             child: _SectionList(
               title: 'Projects',
               children: [],
             ),
           ),
           // Crews Section
-          SliverToBoxAdapter(
+          const SliverToBoxAdapter(
             child: _SectionList(
               title: 'Crews',
               children: [],
             ),
           ),
           // Marketplace Section
-          SliverToBoxAdapter(
+          const SliverToBoxAdapter(
             child: _SectionList(
               title: 'Marketplace',
               children: [],
             ),
           ),
           // Posts Section
-          SliverToBoxAdapter(
+          const SliverToBoxAdapter(
             child: _SectionList(
               title: 'Posts',
               children: [],
             ),
           ),
           // Events Section
-          SliverToBoxAdapter(
+          const SliverToBoxAdapter(
             child: _SectionList(
               title: 'Events',
               children: [],
             ),
           ),
+
+          const SizedBox(height: 24),
+
+          // Profile actions
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    // TODO: Implement edit profile
+                  },
+                  icon: const Icon(Icons.edit),
+                  label: const Text('Edit Profile'),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    // TODO: Implement settings
+                  },
+                  icon: const Icon(Icons.settings),
+                  label: const Text('Settings'),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
-    );
-  }
-
-  Widget _buildStat(BuildContext context, String label, int value) {
-    return Column(
-      children: [
-        Text(
-          value.toString(),
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-        ),
-        Text(
-          label,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.grey[600],
-              ),
-        ),
-      ],
     );
   }
 }
@@ -372,7 +350,7 @@ class MyProfileScreen extends StatelessWidget {
 class _HexBorderPainter extends CustomPainter {
   final Color color;
   final double strokeWidth;
-  _HexBorderPainter({required this.color, this.strokeWidth = 4});
+  const _HexBorderPainter({required this.color, this.strokeWidth = 4});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -444,7 +422,7 @@ class _CollabBadge extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.15),
+            color: color.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
@@ -498,7 +476,7 @@ class _CollabList extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: color.withOpacity(0.15),
+                          color: color.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(item['status'],

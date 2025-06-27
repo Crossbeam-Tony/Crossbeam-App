@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../services/data_service.dart';
 import '../screens/user_profile_screen.dart';
 import 'dart:math';
 

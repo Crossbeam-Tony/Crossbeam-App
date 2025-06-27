@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/data_service.dart';
 import '../models/project.dart';
-import 'project_details_screen.dart';
-import '../shared/avatar.dart';
 import 'package:go_router/go_router.dart';
 
 class ProjectsScreen extends StatelessWidget {
@@ -39,26 +37,39 @@ class ProjectsScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Image.network(
-                    project.imageUrl!,
-                    height: 200,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        height: 200,
-                        width: double.infinity,
-                        color: Colors.grey[200],
-                        child: const Center(
-                          child: Icon(
-                            Icons.image_not_supported_outlined,
-                            size: 48,
-                            color: Colors.grey,
+                  project.images?.isNotEmpty == true
+                      ? Image.network(
+                          project.images!.first,
+                          height: 200,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              height: 200,
+                              width: double.infinity,
+                              color: Colors.grey[200],
+                              child: const Center(
+                                child: Icon(
+                                  Icons.image_not_supported_outlined,
+                                  size: 48,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            );
+                          },
+                        )
+                      : Container(
+                          height: 200,
+                          width: double.infinity,
+                          color: Colors.grey[200],
+                          child: const Center(
+                            child: Icon(
+                              Icons.work_outline,
+                              size: 48,
+                              color: Colors.grey,
+                            ),
                           ),
                         ),
-                      );
-                    },
-                  ),
                   Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(
@@ -77,14 +88,14 @@ class ProjectsScreen extends StatelessWidget {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
-                                color: _getStatusColor(project.status)
-                                    .withOpacity(0.1),
+                                color: _getStatusColor(project.statusEnum)
+                                    .withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
-                                project.status.toString().split('.').last,
+                                project.statusEnum.toString().split('.').last,
                                 style: TextStyle(
-                                  color: _getStatusColor(project.status),
+                                  color: _getStatusColor(project.statusEnum),
                                   fontSize: 12,
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -100,53 +111,42 @@ class ProjectsScreen extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Icon(Icons.category,
-                                size: 16,
-                                color: Theme.of(context).colorScheme.secondary),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                project.category,
-                                style: TextStyle(
+                        if (project.tags != null &&
+                            project.tags!.isNotEmpty) ...[
+                          Row(
+                            children: [
+                              Icon(Icons.tag,
+                                  size: 16,
                                   color:
-                                      Theme.of(context).colorScheme.secondary,
+                                      Theme.of(context).colorScheme.secondary),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: Text(
+                                  project.tags!.take(3).join(', '),
+                                  style: TextStyle(
+                                    color:
+                                        Theme.of(context).colorScheme.secondary,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                overflow: TextOverflow.ellipsis,
                               ),
-                            ),
-                            const SizedBox(width: 16),
-                            Icon(Icons.calendar_today,
-                                size: 16,
-                                color: Theme.of(context).colorScheme.secondary),
-                            const SizedBox(width: 4),
-                            Flexible(
-                              child: Text(
-                                'Due ${project.dueDate.day}/${project.dueDate.month}/${project.dueDate.year}',
-                                style: TextStyle(
-                                  color:
-                                      Theme.of(context).colorScheme.secondary,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                        ],
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Row(
                               children: [
-                                Icon(Icons.people,
+                                Icon(Icons.calendar_today,
                                     size: 16,
                                     color: Theme.of(context)
                                         .colorScheme
                                         .secondary),
                                 const SizedBox(width: 4),
                                 Text(
-                                  '${project.members.length} members',
+                                  'Created ${_formatDate(project.createdAt)}',
                                   style: TextStyle(
                                     color:
                                         Theme.of(context).colorScheme.secondary,
@@ -156,7 +156,7 @@ class ProjectsScreen extends StatelessWidget {
                             ),
                             Flexible(
                               child: Text(
-                                '${(project.progress * 100).toInt()}% complete',
+                                '50% complete', // Default since no progress field
                                 style: TextStyle(
                                   color: Theme.of(context).colorScheme.primary,
                                   fontWeight: FontWeight.bold,
@@ -168,7 +168,7 @@ class ProjectsScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 8),
                         LinearProgressIndicator(
-                          value: project.progress,
+                          value: 0.5, // Default since no progress field
                           backgroundColor: Theme.of(context)
                               .colorScheme
                               .surfaceContainerHighest,
@@ -198,6 +198,24 @@ class ProjectsScreen extends StatelessWidget {
         return Colors.purple;
       case ProjectStatus.completed:
         return Colors.green;
+    }
+  }
+
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final difference = now.difference(date);
+
+    if (difference.inDays == 0) {
+      return 'today';
+    } else if (difference.inDays == 1) {
+      return 'yesterday';
+    } else if (difference.inDays < 7) {
+      return '${difference.inDays} days ago';
+    } else if (difference.inDays < 30) {
+      final weeks = (difference.inDays / 7).floor();
+      return '$weeks ${weeks == 1 ? 'week' : 'weeks'} ago';
+    } else {
+      return '${date.month}/${date.day}/${date.year}';
     }
   }
 }

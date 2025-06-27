@@ -43,3 +43,17 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Flutter/Dart packages
+.dart_tool/
+.packages
+
+# Environment variables
+.env
+
+# IDE-specific files
+.idea/
+.vscode/
+
+# FVM Version Cache
+.fvm/

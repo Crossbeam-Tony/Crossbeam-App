@@ -81,7 +81,7 @@ class _UserLinkState extends State<UserLink> {
                         GestureDetector(
                           onTap: () => context.push('/user/${user.id}'),
                           child: Text(
-                            user.realname,
+                            user.fullName,
                             style: widget.nameStyle ??
                                 Theme.of(context)
                                     .textTheme
@@ -123,7 +123,7 @@ class _UserLinkState extends State<UserLink> {
               ? GestureDetector(
                   onTap: () => context.push('/user/${user.id}'),
                   child: Text(
-                    user.realname,
+                    user.fullName,
                     style: widget.nameStyle?.copyWith(
                       color: Theme.of(context).colorScheme.primary,
                     ),

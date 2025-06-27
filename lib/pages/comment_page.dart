@@ -3,6 +3,7 @@ import '../widgets/comments_widget.dart';
 
 class CommentPage extends StatelessWidget {
   final String projectId;
+
   const CommentPage({super.key, required this.projectId});
 
   @override
@@ -10,10 +11,11 @@ class CommentPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Comments'),
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        foregroundColor: Theme.of(context).colorScheme.onSurface,
       ),
-      body: CommentsWidget(projectId: projectId),
+      body: CommentsWidget(
+        entityType: 'project',
+        entityId: projectId,
+      ),
     );
   }
 }

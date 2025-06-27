@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../models/post.dart';
 import '../../services/data_service.dart';
-import '../../shared/user_link.dart';
 import '../../shared/avatar.dart';
 
 class CrewsfeedDetailPage extends StatefulWidget {
@@ -45,13 +44,6 @@ class _CrewsfeedDetailPageState extends State<CrewsfeedDetailPage> {
     HapticFeedback.lightImpact();
   }
 
-  void _toggleCommentLike(String commentId) {
-    setState(() {
-      _likedComments[commentId] = !(_likedComments[commentId] ?? false);
-    });
-    HapticFeedback.lightImpact();
-  }
-
   void _toggleBookmark() {
     setState(() {
       _isBookmarked = !_isBookmarked;
@@ -84,10 +76,6 @@ class _CrewsfeedDetailPageState extends State<CrewsfeedDetailPage> {
         ),
       );
     }
-  }
-
-  void _addComment() {
-    _submitComment();
   }
 
   void _showShareDialog() {
@@ -175,7 +163,8 @@ class _CrewsfeedDetailPageState extends State<CrewsfeedDetailPage> {
             width: 60,
             height: 60,
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+              color:
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
@@ -347,7 +336,6 @@ class _CrewsfeedDetailPageState extends State<CrewsfeedDetailPage> {
       case PostType.video:
         return 'Video';
       case PostType.text:
-      default:
         return 'Post';
     }
   }
@@ -452,13 +440,13 @@ class _CrewsfeedDetailPageState extends State<CrewsfeedDetailPage> {
                           color: Theme.of(context)
                               .colorScheme
                               .outline
-                              .withOpacity(0.2),
+                              .withValues(alpha: 0.2),
                         ),
                       ),
                       child: Row(
                         children: [
                           Avatar(
-                            imageUrl: widget.post.authorAvatar ?? '',
+                            imageUrl: widget.post.authorAvatar,
                             size: 48,
                           ),
                           const SizedBox(width: 12),
@@ -467,7 +455,7 @@ class _CrewsfeedDetailPageState extends State<CrewsfeedDetailPage> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  author.realname,
+                                  author.fullName,
                                   style: Theme.of(context)
                                       .textTheme
                                       .titleMedium
@@ -484,7 +472,7 @@ class _CrewsfeedDetailPageState extends State<CrewsfeedDetailPage> {
                                         color: Theme.of(context)
                                             .colorScheme
                                             .onSurface
-                                            .withOpacity(0.6),
+                                            .withValues(alpha: 0.6),
                                       ),
                                 ),
                                 if (widget.post.crew.isNotEmpty)
@@ -496,7 +484,8 @@ class _CrewsfeedDetailPageState extends State<CrewsfeedDetailPage> {
                                         ?.copyWith(
                                           color: Theme.of(context)
                                               .colorScheme
-                                              .primary,
+                                              .primary
+                                              .withValues(alpha: 0.5),
                                           fontWeight: FontWeight.w500,
                                         ),
                                   ),
@@ -521,7 +510,7 @@ class _CrewsfeedDetailPageState extends State<CrewsfeedDetailPage> {
                           color: Theme.of(context)
                               .colorScheme
                               .outline
-                              .withOpacity(0.2),
+                              .withValues(alpha: 0.2),
                         ),
                       ),
                       child: Column(
@@ -576,7 +565,7 @@ class _CrewsfeedDetailPageState extends State<CrewsfeedDetailPage> {
                         color: Theme.of(context)
                             .colorScheme
                             .outline
-                            .withOpacity(0.2),
+                            .withValues(alpha: 0.2),
                       ),
                     ),
                     child: Row(
@@ -595,7 +584,7 @@ class _CrewsfeedDetailPageState extends State<CrewsfeedDetailPage> {
                                     : Theme.of(context)
                                         .colorScheme
                                         .onSurface
-                                        .withOpacity(0.6),
+                                        .withValues(alpha: 0.6),
                                 size: 24,
                               ),
                               const SizedBox(width: 8),
@@ -621,7 +610,7 @@ class _CrewsfeedDetailPageState extends State<CrewsfeedDetailPage> {
                               color: Theme.of(context)
                                   .colorScheme
                                   .onSurface
-                                  .withOpacity(0.6),
+                                  .withValues(alpha: 0.6),
                               size: 24,
                             ),
                             const SizedBox(width: 8),
@@ -649,7 +638,7 @@ class _CrewsfeedDetailPageState extends State<CrewsfeedDetailPage> {
                                 : Theme.of(context)
                                     .colorScheme
                                     .onSurface
-                                    .withOpacity(0.6),
+                                    .withValues(alpha: 0.6),
                           ),
                           onPressed: _toggleBookmark,
                           tooltip:
@@ -663,7 +652,7 @@ class _CrewsfeedDetailPageState extends State<CrewsfeedDetailPage> {
                             color: Theme.of(context)
                                 .colorScheme
                                 .onSurface
-                                .withOpacity(0.6),
+                                .withValues(alpha: 0.6),
                           ),
                           onPressed: _showShareDialog,
                           tooltip: 'Share post',
@@ -691,7 +680,7 @@ class _CrewsfeedDetailPageState extends State<CrewsfeedDetailPage> {
                               color: Theme.of(context)
                                   .colorScheme
                                   .onSurface
-                                  .withOpacity(0.6),
+                                  .withValues(alpha: 0.6),
                             ),
                       ),
                     ],
@@ -710,7 +699,7 @@ class _CrewsfeedDetailPageState extends State<CrewsfeedDetailPage> {
                             color: Theme.of(context)
                                 .colorScheme
                                 .onSurface
-                                .withOpacity(0.3),
+                                .withValues(alpha: 0.3),
                           ),
                           const SizedBox(height: 16),
                           Text(
@@ -722,7 +711,7 @@ class _CrewsfeedDetailPageState extends State<CrewsfeedDetailPage> {
                                   color: Theme.of(context)
                                       .colorScheme
                                       .onSurface
-                                      .withOpacity(0.6),
+                                      .withValues(alpha: 0.6),
                                 ),
                           ),
                           const SizedBox(height: 8),
@@ -735,7 +724,7 @@ class _CrewsfeedDetailPageState extends State<CrewsfeedDetailPage> {
                                   color: Theme.of(context)
                                       .colorScheme
                                       .onSurface
-                                      .withOpacity(0.4),
+                                      .withValues(alpha: 0.4),
                                 ),
                           ),
                         ],
@@ -758,7 +747,10 @@ class _CrewsfeedDetailPageState extends State<CrewsfeedDetailPage> {
               color: Theme.of(context).colorScheme.surface,
               border: Border(
                 top: BorderSide(
-                  color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .outline
+                      .withValues(alpha: 0.1),
                 ),
               ),
             ),
@@ -779,13 +771,13 @@ class _CrewsfeedDetailPageState extends State<CrewsfeedDetailPage> {
                         color: Theme.of(context)
                             .colorScheme
                             .surfaceContainerHighest
-                            .withOpacity(0.3),
+                            .withValues(alpha: 0.3),
                         borderRadius: BorderRadius.circular(24),
                         border: Border.all(
                           color: Theme.of(context)
                               .colorScheme
                               .outline
-                              .withOpacity(0.2),
+                              .withValues(alpha: 0.2),
                         ),
                       ),
                       child: TextField(
@@ -797,7 +789,7 @@ class _CrewsfeedDetailPageState extends State<CrewsfeedDetailPage> {
                             color: Theme.of(context)
                                 .colorScheme
                                 .onSurface
-                                .withOpacity(0.5),
+                                .withValues(alpha: 0.5),
                           ),
                           border: InputBorder.none,
                           contentPadding: const EdgeInsets.symmetric(
@@ -823,7 +815,7 @@ class _CrewsfeedDetailPageState extends State<CrewsfeedDetailPage> {
                             ? Theme.of(context)
                                 .colorScheme
                                 .onSurface
-                                .withOpacity(0.1)
+                                .withValues(alpha: 0.1)
                             : Theme.of(context).colorScheme.primary,
                         shape: BoxShape.circle,
                       ),
@@ -837,7 +829,7 @@ class _CrewsfeedDetailPageState extends State<CrewsfeedDetailPage> {
                                   Theme.of(context)
                                       .colorScheme
                                       .onSurface
-                                      .withOpacity(0.5),
+                                      .withValues(alpha: 0.5),
                                 ),
                               ),
                             )
@@ -849,171 +841,6 @@ class _CrewsfeedDetailPageState extends State<CrewsfeedDetailPage> {
                     ),
                   ),
                 ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCommentSection() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Section header with comment count
-          Row(
-            children: [
-              Icon(
-                Icons.comment_outlined,
-                size: 20,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'Comments (${widget.post.comments.length})',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-              ),
-              const Spacer(),
-              IconButton(
-                onPressed: () {
-                  // TODO: Implement comment sorting
-                },
-                icon: const Icon(Icons.sort),
-                tooltip: 'Sort comments',
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          // Comment input section
-          _buildCommentInput(),
-          const SizedBox(height: 16),
-
-          // Comments list
-          if (widget.post.comments.isNotEmpty) ...[
-            const Divider(),
-            const SizedBox(height: 8),
-            ...widget.post.comments
-                .map((comment) => _buildCommentItem(comment)),
-          ] else ...[
-            const SizedBox(height: 32),
-            Center(
-              child: Column(
-                children: [
-                  Icon(
-                    Icons.comment_outlined,
-                    size: 48,
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withOpacity(0.3),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'No comments yet',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSurface
-                              .withOpacity(0.6),
-                        ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Be the first to comment!',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSurface
-                              .withOpacity(0.4),
-                        ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCommentInput() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context)
-            .colorScheme
-            .surfaceContainerHighest
-            .withOpacity(0.3),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
-        ),
-      ),
-      child: Row(
-        children: [
-          // User avatar
-          const Padding(
-            padding: EdgeInsets.only(left: 12),
-            child: Avatar(
-              imageUrl:
-                  'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150',
-              size: 32,
-            ),
-          ),
-          const SizedBox(width: 12),
-
-          // Comment input field
-          Expanded(
-            child: TextField(
-              controller: _commentController,
-              decoration: InputDecoration(
-                hintText: 'Write a comment...',
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                hintStyle: TextStyle(
-                  color:
-                      Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                ),
-              ),
-              maxLines: null,
-              textCapitalization: TextCapitalization.sentences,
-            ),
-          ),
-
-          // Send button
-          Container(
-            margin: const EdgeInsets.only(right: 8),
-            child: IconButton(
-              onPressed: _commentController.text.trim().isNotEmpty
-                  ? _addComment
-                  : null,
-              icon: Icon(
-                Icons.send,
-                color: _commentController.text.trim().isNotEmpty
-                    ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
-              ),
-              style: IconButton.styleFrom(
-                backgroundColor: _commentController.text.trim().isNotEmpty
-                    ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
-                    : Colors.transparent,
-                shape: const CircleBorder(),
               ),
             ),
           ),
@@ -1057,7 +884,7 @@ class _CrewsfeedDetailPageState extends State<CrewsfeedDetailPage> {
                             color: Theme.of(context)
                                 .colorScheme
                                 .onSurface
-                                .withOpacity(0.6),
+                                .withValues(alpha: 0.6),
                           ),
                     ),
                   ],
@@ -1123,7 +950,7 @@ class _CrewsfeedDetailPageState extends State<CrewsfeedDetailPage> {
                       color: Theme.of(context)
                           .colorScheme
                           .surfaceContainerHighest
-                          .withOpacity(0.3),
+                          .withValues(alpha: 0.3),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Column(
@@ -1173,7 +1000,7 @@ class _CrewsfeedDetailPageState extends State<CrewsfeedDetailPage> {
                             color: Theme.of(context)
                                 .colorScheme
                                 .onSurface
-                                .withOpacity(0.6),
+                                .withValues(alpha: 0.6),
                             fontSize: 10,
                           ),
                     ),
@@ -1204,7 +1031,7 @@ class _CrewsfeedDetailPageState extends State<CrewsfeedDetailPage> {
           color: Theme.of(context)
               .colorScheme
               .surfaceContainerHighest
-              .withOpacity(0.3),
+              .withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -1218,7 +1045,10 @@ class _CrewsfeedDetailPageState extends State<CrewsfeedDetailPage> {
             Icon(
               Icons.keyboard_arrow_up,
               size: 16,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.6),
             ),
           ],
         ),

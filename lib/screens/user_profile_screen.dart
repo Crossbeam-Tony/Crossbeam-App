@@ -4,7 +4,6 @@ import '../services/data_service.dart';
 import '../models/user_profile.dart';
 import '../widgets/project_card.dart';
 import '../widgets/marketplace_item_card.dart';
-import 'my_profile_screen.dart';
 import '../shared/avatar.dart';
 
 class UserProfileScreen extends StatelessWidget {
@@ -25,7 +24,7 @@ class UserProfileScreen extends StatelessWidget {
 
         return Scaffold(
           appBar: AppBar(
-            title: Text(user.name),
+            title: Text(user.fullName),
             actions: [
               IconButton(
                 icon: const Icon(Icons.message),
@@ -68,7 +67,7 @@ class UserProfileScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  user.name,
+                  user.fullName,
                   style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -170,7 +169,7 @@ class UserProfileScreen extends StatelessWidget {
 
   Widget _buildUserProjects(UserProfile user, DataService dataService) {
     final userProjects = dataService.projects
-        .where((project) => project.members.contains(user.id))
+        .where((project) => project.userId == user.id)
         .toList();
 
     return Column(

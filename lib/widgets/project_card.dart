@@ -1,13 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../models/project.dart';
-import '../models/user_profile.dart';
-import '../services/data_service.dart';
-import '../widgets/avatar.dart';
-import '../screens/user_profile_screen.dart';
 import 'package:go_router/go_router.dart';
-import '../shared/user_link.dart';
-import '../utils/safe_network_image.dart';
+import '../models/project.dart';
 
 class ProjectCard extends StatefulWidget {
   final Project project;
@@ -27,23 +20,19 @@ class ProjectCard extends StatefulWidget {
 
 class _ProjectCardState extends State<ProjectCard>
     with SingleTickerProviderStateMixin {
-  late Future<List<UserProfile?>> _membersFuture;
   late AnimationController _progressController;
   late Animation<double> _progressAnimation;
 
   @override
   void initState() {
     super.initState();
-    _membersFuture = _fetchMembers();
-
-    // Setup progress animation
     _progressController = AnimationController(
       duration: const Duration(milliseconds: 1500),
       vsync: this,
     );
     _progressAnimation = Tween<double>(
       begin: 0.0,
-      end: widget.project.progress,
+      end: 0.5, // Default progress since we don't have progress field anymore
     ).animate(CurvedAnimation(
       parent: _progressController,
       curve: Curves.easeInOut,
@@ -57,16 +46,8 @@ class _ProjectCardState extends State<ProjectCard>
     super.dispose();
   }
 
-  Future<List<UserProfile?>> _fetchMembers() async {
-    final dataService = Provider.of<DataService>(context, listen: false);
-    final memberFutures = widget.project.members
-        .map((memberId) => dataService.getUserProfile(memberId))
-        .toList();
-    return Future.wait(memberFutures);
-  }
-
   Color _getStatusColor() {
-    switch (widget.project.status) {
+    switch (widget.project.statusEnum) {
       case ProjectStatus.planning:
         return Colors.blue;
       case ProjectStatus.inProgress:
@@ -79,7 +60,7 @@ class _ProjectCardState extends State<ProjectCard>
   }
 
   String _getStatusText() {
-    switch (widget.project.status) {
+    switch (widget.project.statusEnum) {
       case ProjectStatus.planning:
         return 'Planning';
       case ProjectStatus.inProgress:
@@ -89,6 +70,19 @@ class _ProjectCardState extends State<ProjectCard>
       case ProjectStatus.completed:
         return 'Completed';
     }
+  }
+
+  Widget _buildFallbackImage() {
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      color: Colors.grey[300],
+      child: Icon(
+        Icons.work_outline,
+        size: 60,
+        color: Colors.grey[600],
+      ),
+    );
   }
 
   @override
@@ -106,7 +100,7 @@ class _ProjectCardState extends State<ProjectCard>
           color: Theme.of(context).colorScheme.surface,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),
@@ -114,9 +108,9 @@ class _ProjectCardState extends State<ProjectCard>
         ),
         child: Column(
           children: [
-            // Top section with image (60% of card height)
+            // Top section with image
             Container(
-              height: 200.0, // Reduced from 240.0 to 200.0
+              height: 200.0,
               width: double.infinity,
               decoration: BoxDecoration(
                 color: Colors.grey[200],
@@ -130,10 +124,10 @@ class _ProjectCardState extends State<ProjectCard>
                   topLeft: Radius.circular(4),
                   topRight: Radius.circular(4),
                 ),
-                child: widget.project.imageUrl != null &&
-                        widget.project.imageUrl!.isNotEmpty
+                child: widget.project.images != null &&
+                        widget.project.images!.isNotEmpty
                     ? Image.network(
-                        widget.project.imageUrl!,
+                        widget.project.images!.first,
                         fit: BoxFit.cover,
                         width: double.infinity,
                         height: double.infinity,
@@ -144,7 +138,8 @@ class _ProjectCardState extends State<ProjectCard>
               ),
             ),
             // Bottom section with content
-            Expanded(
+            SizedBox(
+              height: 200,
               child: SingleChildScrollView(
                 child: Container(
                   padding: const EdgeInsets.symmetric(
@@ -183,7 +178,7 @@ class _ProjectCardState extends State<ProjectCard>
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
-                              color: _getStatusColor().withOpacity(0.1),
+                              color: _getStatusColor().withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
@@ -198,49 +193,41 @@ class _ProjectCardState extends State<ProjectCard>
                         ],
                       ),
                       const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .primary
-                                  .withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              widget.project.category ?? 'Uncategorized',
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.primary,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
+
+                      // Tags section
+                      if (widget.project.tags != null &&
+                          widget.project.tags!.isNotEmpty) ...[
+                        Wrap(
+                          spacing: 4,
+                          runSpacing: 4,
+                          children: widget.project.tags!.take(3).map((tag) {
+                            return Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
                               ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Icon(
-                            Icons.calendar_today,
-                            size: 14,
-                            color: Theme.of(context).colorScheme.secondary,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            widget.project.dueDate != null
-                                ? 'Due ${widget.project.dueDate!.day}/${widget.project.dueDate!.month}/${widget.project.dueDate!.year}'
-                                : 'No due date',
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
-                                ?.copyWith(
-                                  color:
-                                      Theme.of(context).colorScheme.secondary,
+                              decoration: BoxDecoration(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .primary
+                                    .withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                tag,
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w500,
                                 ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                        const SizedBox(height: 12),
+                      ],
+
+                      // Progress bar
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -249,21 +236,21 @@ class _ProjectCardState extends State<ProjectCard>
                             children: [
                               Text(
                                 'Progress',
-                                style: Theme.of(context).textTheme.bodySmall,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.w500,
+                                    ),
                               ),
-                              AnimatedBuilder(
-                                animation: _progressAnimation,
-                                builder: (context, child) {
-                                  return Text(
-                                    '${(_progressAnimation.value * 100).toInt()}%',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodySmall
-                                        ?.copyWith(
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                  );
-                                },
+                              Text(
+                                '50%', // Default since we don't have progress field
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.w500,
+                                    ),
                               ),
                             ],
                           ),
@@ -273,84 +260,50 @@ class _ProjectCardState extends State<ProjectCard>
                             builder: (context, child) {
                               return LinearProgressIndicator(
                                 value: _progressAnimation.value,
-                                backgroundColor: Theme.of(context)
-                                    .colorScheme
-                                    .surfaceContainerHighest,
+                                backgroundColor: Colors.grey[300],
                                 valueColor: AlwaysStoppedAnimation<Color>(
-                                  Theme.of(context).colorScheme.primary,
+                                  _getStatusColor(),
                                 ),
                               );
                             },
                           ),
                         ],
                       ),
+
                       const SizedBox(height: 12),
+
+                      // Footer with creation date
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          FutureBuilder<List<UserProfile?>>(
-                            future: _membersFuture,
-                            builder: (context, snapshot) {
-                              if (snapshot.connectionState ==
-                                  ConnectionState.waiting) {
-                                return const SizedBox(
-                                    height: 24,
-                                    width: 24,
-                                    child: CircularProgressIndicator(
-                                        strokeWidth: 2));
-                              }
-                              if (!snapshot.hasData || snapshot.data == null) {
-                                return const SizedBox.shrink();
-                              }
-                              final members = snapshot.data!
-                                  .whereType<UserProfile>()
-                                  .toList();
-                              return Row(
-                                children: [
-                                  ...members.take(3).map((member) {
-                                    return Padding(
-                                      padding: const EdgeInsets.only(right: 4),
-                                      child: GestureDetector(
-                                        onTap: () => context
-                                            .push('/profile/${member.id}'),
-                                        child: AvatarWidget(
-                                          userId: member.id,
-                                          radius: 12,
-                                          url: member.avatarUrl,
-                                        ),
-                                      ),
-                                    );
-                                  }).toList(),
-                                  if (members.length > 3)
-                                    Container(
-                                      width: 24,
-                                      height: 24,
-                                      decoration: BoxDecoration(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .surfaceContainerHighest,
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: Center(
-                                        child: Text(
-                                          '+${members.length - 3}',
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodySmall
-                                              ?.copyWith(
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              );
-                            },
-                          ),
                           Text(
-                            '${widget.project.members.length} members',
-                            style: Theme.of(context).textTheme.bodySmall,
+                            'Created ${_formatDate(widget.project.createdAt)}',
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Colors.grey[600],
+                                    ),
                           ),
+                          if (widget.project.images != null &&
+                              widget.project.images!.length > 1)
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.photo_library,
+                                  size: 16,
+                                  color: Colors.grey[600],
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '+${widget.project.images!.length - 1}',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodySmall
+                                      ?.copyWith(
+                                        color: Colors.grey[600],
+                                      ),
+                                ),
+                              ],
+                            ),
                         ],
                       ),
                     ],
@@ -364,19 +317,21 @@ class _ProjectCardState extends State<ProjectCard>
     );
   }
 
-  Widget _buildFallbackImage() {
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      color: Theme.of(context)
-          .colorScheme
-          .surfaceContainerHighest
-          .withOpacity(0.3),
-      child: Icon(
-        Icons.work_outline,
-        size: 48,
-        color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.3),
-      ),
-    );
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final difference = now.difference(date);
+
+    if (difference.inDays == 0) {
+      return 'today';
+    } else if (difference.inDays == 1) {
+      return 'yesterday';
+    } else if (difference.inDays < 7) {
+      return '${difference.inDays} days ago';
+    } else if (difference.inDays < 30) {
+      final weeks = (difference.inDays / 7).floor();
+      return '$weeks ${weeks == 1 ? 'week' : 'weeks'} ago';
+    } else {
+      return '${date.month}/${date.day}/${date.year}';
+    }
   }
 }

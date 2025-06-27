@@ -47,14 +47,11 @@ class SlidingCard extends StatefulWidget {
 class _SlidingCardState extends State<SlidingCard> {
   int _slideDirection = 0; // -1 for left, 0 for center, 1 for right
   double _cardWidth = 0.0;
-  double _dragStartX = 0.0;
   double _currentOffset = 0.0;
   bool _isDragging = false;
 
   void _handleDragStart(DragStartDetails details) {
-    print('Drag start: ${details.globalPosition.dx}');
-    _dragStartX = details.globalPosition.dx;
-    _isDragging = true;
+    // Remove unused field _dragStartX
   }
 
   void _handleDragUpdate(DragUpdateDetails details) {
@@ -144,7 +141,7 @@ class _SlidingCardState extends State<SlidingCard> {
                       borderRadius: BorderRadius.circular(4),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withAlpha((0.1 * 255).toInt()),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),
@@ -170,7 +167,7 @@ class _SlidingCardState extends State<SlidingCard> {
                       borderRadius: BorderRadius.circular(4),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withAlpha((0.1 * 255).toInt()),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),
@@ -202,7 +199,7 @@ class _SlidingCardState extends State<SlidingCard> {
                       borderRadius: BorderRadius.circular(4),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.15),
+                          color: Colors.black.withAlpha((0.15 * 255).toInt()),
                           blurRadius: 12,
                           offset: const Offset(0, 6),
                         ),
@@ -225,52 +222,4 @@ class _SlidingCardState extends State<SlidingCard> {
       },
     );
   }
-}
-
-class _OutlinePainter extends CustomPainter {
-  final double progress;
-  final double direction;
-
-  _OutlinePainter({
-    required this.progress,
-    required this.direction,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    try {
-      if (progress == 0.0 || size.width <= 0 || size.height <= 0) return;
-
-      final paint = Paint()
-        ..color = Colors.purple
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.0;
-
-      final gradient = LinearGradient(
-        colors: [
-          Colors.purple.withOpacity(0.8),
-          Colors.purple.withOpacity(0.4),
-          Colors.purple.withOpacity(0.1),
-        ],
-        begin: Alignment.centerLeft,
-        end: Alignment.centerRight,
-        stops: const [0.0, 0.5, 1.0],
-      );
-
-      paint.shader =
-          gradient.createShader(Rect.fromLTWH(0, 0, size.width, size.height));
-
-      final rect = RRect.fromRectAndRadius(
-        Rect.fromLTWH(0, 0, size.width, size.height),
-        const Radius.circular(4),
-      );
-
-      canvas.drawRRect(rect, paint);
-    } catch (e) {
-      debugPrint('Error painting outline: $e');
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }

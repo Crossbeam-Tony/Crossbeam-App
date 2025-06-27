@@ -7,158 +7,176 @@ import '../../shared/empty_state.dart';
 import '../../services/data_service.dart';
 
 class UserProfilePage extends StatelessWidget {
-  const UserProfilePage({super.key, required this.userId});
   final String userId;
+
+  const UserProfilePage({super.key, required this.userId});
 
   @override
   Widget build(BuildContext context) {
     final dataService = context.read<DataService>();
-    final user = dataService.getUserProfile(userId);
 
-    if (user == null) {
-      return const Scaffold(
-        body: Center(child: Text('User not found')),
-      );
-    }
+    return FutureBuilder<UserProfile?>(
+      future: dataService.getUserProfile(userId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
 
-    return DefaultTabController(
-      length: 4,
-      child: Scaffold(
-        body: CustomScrollView(
-          slivers: [
-            // Cover Photo and Profile Header
-            SliverAppBar(
-              expandedHeight: 200,
-              pinned: true,
-              flexibleSpace: FlexibleSpaceBar(
-                background: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    Image.network(
-                      'https://picsum.photos/seed/${user.id}/800/400',
-                      fit: BoxFit.cover,
-                    ),
-                    Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.transparent,
-                            Colors.black.withValues(alpha: 0.7 * 255),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              bottom: const TabBar(
-                isScrollable: true,
-                tabs: [
-                  Tab(text: 'Projects'),
-                  Tab(text: 'Events'),
-                  Tab(text: 'Crews'),
-                  Tab(text: 'Posts'),
-                ],
-              ),
-            ),
+        if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
+          return const Scaffold(
+            body: Center(child: Text('User not found')),
+          );
+        }
 
-            // Profile Info
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+        final user = snapshot.data!;
+
+        return DefaultTabController(
+          length: 4,
+          child: Scaffold(
+            body: CustomScrollView(
+              slivers: [
+                // Cover Photo and Profile Header
+                SliverAppBar(
+                  expandedHeight: 200,
+                  pinned: true,
+                  flexibleSpace: FlexibleSpaceBar(
+                    background: Stack(
+                      fit: StackFit.expand,
                       children: [
-                        Transform.translate(
-                          offset: const Offset(0, -40),
-                          child: Avatar(
-                            imageUrl: user.avatarUrl,
-                            size: 100,
-                          ),
+                        Image.network(
+                          'https://picsum.photos/seed/${user.id}/800/400',
+                          fit: BoxFit.cover,
                         ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                user.realname,
-                                style:
-                                    Theme.of(context).textTheme.headlineSmall,
-                              ),
-                              Text(
-                                '@${user.username}',
-                                style: Theme.of(context).textTheme.bodyMedium,
-                              ),
-                              Text(
-                                user.location,
-                                style: Theme.of(context).textTheme.bodySmall,
-                              ),
-                            ],
+                        Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Colors.transparent,
+                                Colors.black.withValues(alpha: 0.7 * 255),
+                              ],
+                            ),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
-                    Text(
-                      user.bio,
-                      style: Theme.of(context).textTheme.bodyLarge,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            // Public Stats
-            SliverToBoxAdapter(
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                decoration: BoxDecoration(
-                  border: Border(
-                    top: BorderSide(color: Theme.of(context).dividerColor),
-                    bottom: BorderSide(color: Theme.of(context).dividerColor),
+                  ),
+                  bottom: const TabBar(
+                    isScrollable: true,
+                    tabs: [
+                      Tab(text: 'Projects'),
+                      Tab(text: 'Events'),
+                      Tab(text: 'Crews'),
+                      Tab(text: 'Posts'),
+                    ],
                   ),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _buildStat(
-                        context, 'Projects', user.stats['projects'] ?? 0),
-                    _buildStat(context, 'Events', user.stats['events'] ?? 0),
-                    _buildStat(
-                        context, 'Followers', user.stats['followers'] ?? 0),
-                    _buildStat(
-                        context, 'Following', user.stats['following'] ?? 0),
-                  ],
+
+                // Profile Info
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Transform.translate(
+                              offset: const Offset(0, -40),
+                              child: Avatar(
+                                imageUrl: user.avatarUrl,
+                                size: 100,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    user.realname,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .headlineSmall,
+                                  ),
+                                  Text(
+                                    '@${user.username}',
+                                    style:
+                                        Theme.of(context).textTheme.bodyMedium,
+                                  ),
+                                  Text(
+                                    user.currentLocation,
+                                    style:
+                                        Theme.of(context).textTheme.bodySmall,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          user.bio,
+                          style: Theme.of(context).textTheme.bodyLarge,
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
+
+                // Public Stats
+                SliverToBoxAdapter(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    decoration: BoxDecoration(
+                      border: Border(
+                        top: BorderSide(color: Theme.of(context).dividerColor),
+                        bottom:
+                            BorderSide(color: Theme.of(context).dividerColor),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _buildStat(
+                            context, 'Projects', user.stats['projects'] ?? 0),
+                        _buildStat(
+                            context, 'Events', user.stats['events'] ?? 0),
+                        _buildStat(
+                            context, 'Followers', user.stats['followers'] ?? 0),
+                        _buildStat(
+                            context, 'Following', user.stats['following'] ?? 0),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // Tab Content
+                SliverFillRemaining(
+                  child: TabBarView(
+                    children: <Widget>[
+                      // Projects Tab
+                      _buildProjectsTab(context, dataService, user),
+
+                      // Events Tab
+                      _buildEventsTab(context, dataService, user),
+
+                      // Crews Tab
+                      _buildCrewsTab(context, user),
+
+                      // Posts Tab
+                      _buildPostsTab(context, dataService, user),
+                    ],
+                  ),
+                ),
+              ],
             ),
-
-            // Tab Content
-            SliverFillRemaining(
-              child: TabBarView(
-                children: <Widget>[
-                  // Projects Tab
-                  _buildProjectsTab(context, dataService, user),
-
-                  // Events Tab
-                  _buildEventsTab(context, dataService, user),
-
-                  // Crews Tab
-                  _buildCrewsTab(context, user),
-
-                  // Posts Tab
-                  _buildPostsTab(context, dataService, user),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -186,7 +204,7 @@ class UserProfilePage extends StatelessWidget {
             ),
             title: Text(project.title),
             subtitle: Text(project.description),
-            trailing: Text(project.status.name),
+            trailing: Text(project.status ?? 'planning'),
           ),
         );
       },
@@ -217,7 +235,7 @@ class UserProfilePage extends StatelessWidget {
             ),
             title: Text(event.title),
             subtitle: Text(event.description),
-            trailing: Text(event.status.name),
+            trailing: Text(event.status.toString().split('.').last),
           ),
         );
       },

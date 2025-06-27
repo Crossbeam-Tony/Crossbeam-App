@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/project.dart';
+import '../../models/comment.dart';
 import '../../services/project_service.dart';
+import '../../services/comment_service.dart';
 import '../../services/auth_service.dart';
 import '../../widgets/project_card.dart';
 import 'project_form.dart';
-import '../../screens/project_details_screen.dart';
 import 'package:go_router/go_router.dart';
 import '../../components/sliding_card.dart';
 
@@ -20,33 +21,51 @@ class ProjectsPage extends StatefulWidget {
 
 class _ProjectsPageState extends State<ProjectsPage> {
   late Future<List<Project>> _projectsFuture;
+  late CommentService _commentService;
+  final Map<String, Future<List<Comment>>> _commentsFutures = {};
 
   @override
   void initState() {
     super.initState();
     final authService = Provider.of<AuthService>(context, listen: false);
-    final projectService = ProjectService(authService);
-    _projectsFuture = projectService.fetchProjects();
+    _commentService = CommentService(authService);
+    _projectsFuture =
+        Provider.of<ProjectService>(context, listen: false).fetchProjects();
   }
 
-  void _addProject() {
+  void _refreshProjects() {
+    setState(() {
+      _projectsFuture =
+          Provider.of<ProjectService>(context, listen: false).fetchProjects();
+      _commentsFutures.clear(); // Clear cached comments
+    });
+  }
+
+  Future<List<Comment>> _getCommentsForProject(String projectId) {
+    if (!_commentsFutures.containsKey(projectId)) {
+      _commentsFutures[projectId] =
+          _commentService.fetchCommentsForProject(projectId);
+    }
+    return _commentsFutures[projectId]!;
+  }
+
+  void _navigateToCreateProject() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (context) => Padding(
-        padding:
-            EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-        child: ProjectForm(
-          onSubmit: (project) {
-            // Refresh the list of projects
-            setState(() {
-              final authService =
-                  Provider.of<AuthService>(context, listen: false);
-              final projectService = ProjectService(authService);
-              _projectsFuture = projectService.fetchProjects();
-            });
-            Navigator.pop(context);
-          },
+      builder: (context) => DraggableScrollableSheet(
+        expand: false,
+        builder: (context, scrollController) => Container(
+          padding: const EdgeInsets.all(16),
+          child: SingleChildScrollView(
+            controller: scrollController,
+            child: ProjectForm(
+              onSubmit: (project) {
+                Navigator.of(context).pop();
+                _refreshProjects();
+              },
+            ),
+          ),
         ),
       ),
     );
@@ -65,7 +84,7 @@ class _ProjectsPageState extends State<ProjectsPage> {
             Theme.of(context)
                 .colorScheme
                 .surfaceContainerHighest
-                .withOpacity(0.3),
+                .withValues(alpha: 0.3),
             Theme.of(context).colorScheme.surface,
           ],
         ),
@@ -136,7 +155,10 @@ class _ProjectsPageState extends State<ProjectsPage> {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Theme.of(context).colorScheme.secondaryContainer.withOpacity(0.1),
+              Theme.of(context)
+                  .colorScheme
+                  .secondaryContainer
+                  .withValues(alpha: 0.1),
               Theme.of(context).colorScheme.surface,
             ],
           ),
@@ -152,7 +174,7 @@ class _ProjectsPageState extends State<ProjectsPage> {
                   color: Theme.of(context)
                       .colorScheme
                       .primaryContainer
-                      .withOpacity(0.2),
+                      .withValues(alpha: 0.2),
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(4),
                   ),
@@ -185,21 +207,64 @@ class _ProjectsPageState extends State<ProjectsPage> {
               ),
               // Comments content
               Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildCommentItem('John Doe',
-                          'Great progress on this project!', '2h ago'),
-                      const SizedBox(height: 8),
-                      _buildCommentItem('Jane Smith',
-                          'Looking forward to the next milestone.', '1d ago'),
-                      const SizedBox(height: 8),
-                      _buildCommentItem('Mike Johnson',
-                          'The design looks amazing!', '3d ago'),
-                    ],
-                  ),
+                child: FutureBuilder<List<Comment>>(
+                  future: _getCommentsForProject(project.id),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+
+                    if (snapshot.hasError) {
+                      return Center(
+                        child: Text(
+                          'Error loading comments: ${snapshot.error}',
+                          style: TextStyle(color: Colors.red[600]),
+                        ),
+                      );
+                    }
+
+                    final comments = snapshot.data ?? [];
+
+                    if (comments.isEmpty) {
+                      return const Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.comment_outlined,
+                              size: 32,
+                              color: Colors.grey,
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              'No comments yet',
+                              style: TextStyle(
+                                color: Colors.grey,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
+                    return SingleChildScrollView(
+                      padding: const EdgeInsets.all(12.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: comments.map((comment) {
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 8.0),
+                            child: _buildCommentItem(
+                              comment.userId,
+                              comment.content,
+                              _formatTimeAgo(comment.createdAt),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    );
+                  },
                 ),
               ),
             ],
@@ -251,7 +316,11 @@ class _ProjectsPageState extends State<ProjectsPage> {
     );
   }
 
-  Widget _buildCommentItem(String author, String comment, String timeAgo) {
+  Widget _buildCommentItem(String userId, String comment, String timeAgo) {
+    // For now, show a shortened user ID. Later we can fetch user names from profiles
+    final displayName =
+        userId.length > 8 ? '${userId.substring(0, 8)}...' : userId;
+
     return Container(
       padding: const EdgeInsets.all(8.0),
       margin: const EdgeInsets.only(bottom: 8.0),
@@ -259,7 +328,7 @@ class _ProjectsPageState extends State<ProjectsPage> {
         color: Theme.of(context)
             .colorScheme
             .surfaceContainerHighest
-            .withOpacity(0.3),
+            .withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(8.0),
       ),
       child: Column(
@@ -268,7 +337,7 @@ class _ProjectsPageState extends State<ProjectsPage> {
           Row(
             children: [
               Text(
-                author,
+                displayName,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
@@ -301,68 +370,100 @@ class _ProjectsPageState extends State<ProjectsPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Projects'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _refreshProjects,
+          ),
+        ],
       ),
       body: FutureBuilder<List<Project>>(
         future: _projectsFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
+          }
+          if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
-          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text('No projects found.'));
+          }
+          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.work_outline,
+                    size: 64,
+                    color: Colors.grey,
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'No projects found',
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'Create your first project to get started!',
+                    style: TextStyle(
+                      color: Colors.grey,
+                    ),
+                  ),
+                ],
+              ),
+            );
           }
 
           final projects = snapshot.data!;
-          return RefreshIndicator(
-            onRefresh: () async {
-              setState(() {
-                final authService =
-                    Provider.of<AuthService>(context, listen: false);
-                final projectService = ProjectService(authService);
-                _projectsFuture = projectService.fetchProjects();
-              });
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: projects.length,
+            itemBuilder: (context, index) {
+              final project = projects[index];
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: SlidingCard(
+                  height: 200,
+                  topLayer: (slideProgress) => ProjectCard(project: project),
+                  rightBottomLayer: (slideProgress) =>
+                      _buildRightBottomLayer(context, project, slideProgress),
+                  leftBottomLayer: (slideProgress) =>
+                      _buildLeftBottomLayer(context, project, slideProgress),
+                  onCardOpen: () {
+                    // Handle card open
+                  },
+                  onCardClose: () {
+                    // Handle card close
+                  },
+                ),
+              );
             },
-            child: ListView.builder(
-              itemCount: projects.length,
-              itemBuilder: (context, index) {
-                final project = projects[index];
-                return Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16.0, vertical: 8.0),
-                  child: SlidingCard(
-                    topLayer: (slideProgress) => ProjectCard(project: project),
-                    rightBottomLayer: (slideProgress) =>
-                        _buildRightBottomLayer(context, project, slideProgress),
-                    leftBottomLayer: (slideProgress) =>
-                        _buildLeftBottomLayer(context, project, slideProgress),
-                    maxSwipeOffset: 160,
-                    onTap: () {
-                      context.push('/projects/${project.id}', extra: project);
-                    },
-                    onSlideLeft: () {
-                      // Card opened to show comments
-                    },
-                    onSlideRight: () {
-                      // Card opened to show actions
-                    },
-                  ),
-                );
-              },
-            ),
           );
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _addProject,
-        child: const Icon(Icons.add),
+        onPressed: _navigateToCreateProject,
         tooltip: 'Create Project',
+        child: const Icon(Icons.add),
       ),
     );
   }
 
-  String _formatDate(DateTime date) {
-    return '${date.month}/${date.day}/${date.year}';
+  String _formatTimeAgo(DateTime date) {
+    final now = DateTime.now();
+    final diff = now.difference(date);
+
+    if (diff.inDays > 0) {
+      return '${diff.inDays}d ago';
+    } else if (diff.inHours > 0) {
+      return '${diff.inHours}h ago';
+    } else if (diff.inMinutes > 0) {
+      return '${diff.inMinutes}m ago';
+    } else {
+      return 'Just now';
+    }
   }
 }
 
@@ -383,9 +484,9 @@ class _PurpleGradientOutlinePainter extends CustomPainter {
 
     final gradient = LinearGradient(
       colors: [
-        Colors.purple.withOpacity(0.8),
-        Colors.purple.withOpacity(0.4),
-        Colors.purple.withOpacity(0.1),
+        Colors.purple.withValues(alpha: 0.8),
+        Colors.purple.withValues(alpha: 0.4),
+        Colors.purple.withValues(alpha: 0.1),
       ],
       begin: Alignment.centerLeft,
       end: Alignment.centerRight,
