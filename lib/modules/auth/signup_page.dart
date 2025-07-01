@@ -30,7 +30,6 @@ class _SignUpPageState extends State<SignUpPage> {
     // Pre-fill form with Tony's information for testing
     _firstNameController.text = 'Tony';
     _lastNameController.text = 'Ouellette';
-    _usernameController.text = 'Codewindsor';
     _emailController.text = 'tony.p.ouellette@gmail.com';
     _passwordController.text = 'ShadeR420';
     _confirmPasswordController.text = 'ShadeR420';
@@ -42,7 +41,6 @@ class _SignUpPageState extends State<SignUpPage> {
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
-    _usernameController.dispose();
     _firstNameController.dispose();
     _lastNameController.dispose();
     super.dispose();
@@ -77,7 +75,7 @@ class _SignUpPageState extends State<SignUpPage> {
       await authService.signUp(
         _emailController.text.trim(),
         _passwordController.text,
-        _usernameController.text.trim(),
+        '', // username is now collected in onboarding
         _firstNameController.text.trim(),
         _lastNameController.text.trim(),
         _selectedBirthday,
@@ -196,29 +194,6 @@ class _SignUpPageState extends State<SignUpPage> {
                       ),
                     ),
                   ],
-                ),
-                const SizedBox(height: 16),
-
-                // Username
-                TextFormField(
-                  controller: _usernameController,
-                  decoration: InputDecoration(
-                    labelText: 'Username',
-                    border: const OutlineInputBorder(),
-                    prefixIcon:
-                        Icon(Icons.person, color: colorScheme.onSurfaceVariant),
-                    labelStyle: TextStyle(color: colorScheme.onSurfaceVariant),
-                  ),
-                  style: TextStyle(color: colorScheme.onSurface),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Username is required';
-                    }
-                    if (value.length < 3) {
-                      return 'Username must be at least 3 characters';
-                    }
-                    return null;
-                  },
                 ),
                 const SizedBox(height: 16),
 

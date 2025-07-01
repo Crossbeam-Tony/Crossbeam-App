@@ -176,6 +176,29 @@ class AuthService extends ChangeNotifier {
         print('SignUp user ID: ${response.user!.id}');
         print('SignUp email: ${response.user!.email}');
 
+        // Create a profile record for the new user
+        try {
+          await _supabase.from('profiles').insert({
+            'id': response.user!.id,
+            'email': response.user!.email,
+            'username': username,
+            'full_name': '$firstName $lastName',
+            'first_name': firstName,
+            'last_name': lastName,
+            'bio': '',
+            'avatar_url': '',
+            'hometown': '',
+            'current_location': '',
+            'onboarding_completed': false,
+            'created_at': DateTime.now().toIso8601String(),
+            'updated_at': DateTime.now().toIso8601String(),
+          });
+          print('Profile record created for new user');
+        } catch (e) {
+          print('Error creating profile record: $e');
+          // Continue anyway, profile will be created during onboarding
+        }
+
         // Navigate to OTP entry
         GoRouter.of(navigatorKey.currentContext!).goNamed('verify-code');
       }

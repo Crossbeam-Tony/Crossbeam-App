@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'modules/crewsfeed/crewsfeed_page.dart';
 import 'modules/events/events_page.dart';
 import 'screens/my_profile_screen.dart';
@@ -9,53 +10,30 @@ import 'modules/marketplace/marketplace_page.dart';
 import 'modules/auth/login_page.dart';
 import 'modules/auth/signup_page.dart';
 import 'modules/auth/verify_code_page.dart';
+import 'modules/onboarding/onboarding_page.dart';
 import 'widgets/base_layout.dart';
 import 'screens/crews_screen.dart';
 import 'screens/event_details_screen.dart';
 import 'modules/projects/project_form.dart';
 import 'screens/marketplace_detail_screen.dart';
+import 'screens/crewsfeed_screen.dart';
 import 'services/auth_service.dart';
+import 'services/onboarding_service.dart';
+import 'providers/onboarding_provider.dart';
 
 // Global navigator key for navigation from anywhere in the app
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 class AppRouter {
+  // Cache variables removed - onboarding check disabled
+  // Cache variables removed - onboarding check disabled
+
+  // Cache clearing method removed - onboarding check disabled
+
   static GoRouter createRouter(AuthService authService) {
     return GoRouter(
       navigatorKey: navigatorKey,
       refreshListenable: authService,
-      redirect: (context, state) {
-        final loggedIn = authService.isAuthenticated;
-        final user = authService.currentUser;
-        final isVerified = user != null;
-        final isLoggingIn = state.uri.toString() == '/login' ||
-            state.uri.toString() == '/signup';
-        final isVerifyCode = state.uri.path == '/verify-code';
-
-        print('Router redirect check - Current route: ${state.uri.toString()}');
-        print(
-            'Logged in: $loggedIn, Is verified: $isVerified, Is verify code: $isVerifyCode');
-
-        // Allow verify-code route
-        if (isVerifyCode) {
-          print('No redirect needed for verify-code');
-          return null;
-        }
-
-        // Normal redirect logic
-        if (!loggedIn && !isLoggingIn) {
-          print('Redirecting to login (not logged in)');
-          return '/login';
-        }
-
-        if (loggedIn && isLoggingIn) {
-          print('Redirecting to home (already logged in)');
-          return '/';
-        }
-
-        print('No redirect needed');
-        return null;
-      },
       routes: [
         GoRoute(
           path: '/login',
@@ -74,8 +52,17 @@ class AppRouter {
           },
         ),
         GoRoute(
+          path: '/onboarding',
+          builder: (context, state) => const OnboardingPage(),
+        ),
+        GoRoute(
           path: '/',
-          builder: (context, state) => const BaseLayout(child: CrewsfeedPage()),
+          redirect: (context, state) => '/onboarding',
+        ),
+        GoRoute(
+          path: '/crewsfeed',
+          builder: (context, state) =>
+              const BaseLayout(child: CrewsFeedScreen()),
         ),
         GoRoute(
           path: '/projects',

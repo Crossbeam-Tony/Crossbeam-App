@@ -6,6 +6,7 @@ import 'package:temp_new_project_fixed/services/project_service.dart';
 import 'package:temp_new_project_fixed/services/auth_service.dart';
 import 'package:temp_new_project_fixed/services/data_service.dart';
 import 'package:temp_new_project_fixed/services/theme_service.dart';
+import 'package:temp_new_project_fixed/providers/onboarding_provider.dart';
 import 'app.dart';
 import 'supabase_config.dart';
 
@@ -15,27 +16,29 @@ void main() async {
   final prefs = await SharedPreferences.getInstance();
 
   final authService = AuthService();
+  final themeService = ThemeService(prefs);
 
-  print('🔥🔥🔥 Starting app initialization... 🔥🔥🔥');
-
-  // Listen for auth state changes as recommended in troubleshooting steps
-  Supabase.instance.client.auth.onAuthStateChange.listen((data) {
-    final event = data.event;
-    final session = data.session;
-    print('🔔 Auth state change: $event, session=$session');
-    if (session != null) {
-      print('🔔 User authenticated: ${session.user.email}');
-      print('🔔 Email confirmed at: ${session.user.emailConfirmedAt}');
-    }
-  });
+  // Always set light mode and Crossbeam before app starts
+  await themeService.fetchThemesFromDb();
+  final crossbeamThemes = themeService.availableThemes
+      .where((theme) =>
+          theme.name.toLowerCase() == 'crossbeam' && theme.mode == 'light')
+      .toList();
+  if (crossbeamThemes.isNotEmpty) {
+    final crossbeamTheme = crossbeamThemes.first;
+    await themeService.setThemeAndMode(
+        crossbeamTheme, false); // false = light mode
+  }
 
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => authService),
-        ChangeNotifierProvider(create: (_) => ThemeService(prefs)),
+        ChangeNotifierProvider(create: (_) => themeService),
         ChangeNotifierProvider(
             create: (_) => DataService(authService.currentUser)),
+        ChangeNotifierProvider(
+            create: (_) => OnboardingProvider(authService, themeService)),
         ProxyProvider<AuthService, ProjectService>(
           update: (_, authService, __) => ProjectService(authService),
         ),

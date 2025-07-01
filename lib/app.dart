@@ -4,7 +4,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:go_router/go_router.dart';
 import 'services/theme_service.dart';
 import 'services/auth_service.dart';
-import 'config/design_system.dart';
 import 'router.dart';
 
 class App extends StatefulWidget {
@@ -27,22 +26,17 @@ class _AppState extends State<App> {
 
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => ThemeService(widget.prefs)),
-      ],
-      child: Consumer<ThemeService>(
-        builder: (context, themeService, child) {
-          return MaterialApp.router(
-            title: 'Crossbeam',
-            debugShowCheckedModeBanner: false,
-            theme: DesignSystem.lightTheme,
-            darkTheme: DesignSystem.darkTheme,
-            themeMode: themeService.themeMode,
-            routerConfig: _buildRouter(),
-          );
-        },
-      ),
+    return Consumer<ThemeService>(
+      builder: (context, themeService, child) {
+        return MaterialApp.router(
+          title: 'Crossbeam',
+          debugShowCheckedModeBanner: false,
+          theme: themeService.currentLightTheme,
+          darkTheme: themeService.currentDarkTheme,
+          themeMode: themeService.themeMode,
+          routerConfig: _buildRouter(),
+        );
+      },
     );
   }
 
